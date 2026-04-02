@@ -1,18 +1,55 @@
 package handlers
 
 import (
+	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
-	"fmt"
+	"encoding/hex"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andrewidianto12/SewaSini/internal/models"
 )
 
+const pbkdf2Iterations = 10000
+
+// hashPassword derives a key using iterated HMAC-SHA256 (PBKDF2-like) with a random salt.
+// Format: <hex-salt>$<hex-derived-key>
 func hashPassword(password string) string {
-	h := sha256.New()
-	h.Write([]byte(password))
-	return fmt.Sprintf("%x", h.Sum(nil))
+	salt := make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		// Fallback to a fixed salt if random fails.
+		salt = []byte("sewasini-fallback")
+	}
+	dk := pbkdf2HMACSHA256([]byte(password), salt, pbkdf2Iterations)
+	return hex.EncodeToString(salt) + "$" + hex.EncodeToString(dk)
+}
+
+// checkPassword verifies a plaintext password against a stored hash produced by hashPassword.
+func checkPassword(password, stored string) bool {
+	parts := strings.SplitN(stored, "$", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	salt, err := hex.DecodeString(parts[0])
+	if err != nil {
+		return false
+	}
+	dk := pbkdf2HMACSHA256([]byte(password), salt, pbkdf2Iterations)
+	return hmac.Equal([]byte(hex.EncodeToString(dk)), []byte(parts[1]))
+}
+
+func pbkdf2HMACSHA256(password, salt []byte, iterations int) []byte {
+	mac := hmac.New(sha256.New, password)
+	mac.Write(salt)
+	dk := mac.Sum(nil)
+	for i := 1; i < iterations; i++ {
+		mac.Reset()
+		mac.Write(dk)
+		dk = mac.Sum(nil)
+	}
+	return dk
 }
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +73,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	user, err := h.store.GetUserByEmail(email)
-	if err != nil || user.Password != hashPassword(password) {
+	if err != nil || !checkPassword(password, user.Password) {
 		data := h.newTemplateData(r)
 		data.Title = "Masuk - SewaSini"
 		data.Error = "Email atau password salah"
