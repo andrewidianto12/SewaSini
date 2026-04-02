@@ -1,0 +1,71 @@
+{{define "content"}}
+<section class="hero-section text-white text-center py-5">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold mb-3">Temukan Ruangan Impian Anda</h1>
+        <p class="lead mb-4">Sewa ruangan meeting, aula event, dan coworking space terbaik di kota Anda dengan mudah dan terpercaya.</p>
+        <a href="/rooms" class="btn btn-warning btn-lg px-5 fw-bold">Lihat Semua Ruangan</a>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 p-4">
+                    <div class="card-body">
+                        <i class="bi bi-shield-check text-primary fs-1 mb-3"></i>
+                        <h5 class="card-title">Terpercaya</h5>
+                        <p class="card-text text-muted">Semua ruangan telah terverifikasi dan memenuhi standar kualitas terbaik.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 p-4">
+                    <div class="card-body">
+                        <i class="bi bi-clock text-primary fs-1 mb-3"></i>
+                        <h5 class="card-title">Fleksibel</h5>
+                        <p class="card-text text-muted">Sewa per jam atau per hari sesuai kebutuhan Anda.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 p-4">
+                    <div class="card-body">
+                        <i class="bi bi-geo-alt text-primary fs-1 mb-3"></i>
+                        <h5 class="card-title">Lokasi Strategis</h5>
+                        <p class="card-text text-muted">Tersedia di berbagai kota besar di Indonesia.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-4">Ruangan Unggulan</h2>
+        <div class="row g-4">
+            {{range .Rooms}}
+            <div class="col-md-4">
+                <div class="card room-card h-100 shadow-sm">
+                    <img src="{{.ImageURL}}" class="card-img-top" alt="{{.Name}}" style="height:200px;object-fit:cover;">
+                    <div class="card-body">
+                        <span class="badge badge-type-{{.Type}} mb-2">{{typeLabel .Type}}</span>
+                        <h5 class="card-title">{{.Name}}</h5>
+                        <p class="text-muted mb-1"><i class="bi bi-geo-alt"></i> {{.Location}}</p>
+                        <p class="text-muted mb-2"><i class="bi bi-people"></i> Kapasitas: {{.Capacity}} orang</p>
+                        <p class="fw-bold text-primary">{{formatCurrency .PricePerDay}}/hari</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="/rooms/{{.ID}}" class="btn btn-primary w-100">Lihat Detail</a>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        <div class="text-center mt-4">
+            <a href="/rooms" class="btn btn-outline-primary btn-lg">Lihat Semua Ruangan</a>
+        </div>
+    </div>
+</section>
+{{end}}

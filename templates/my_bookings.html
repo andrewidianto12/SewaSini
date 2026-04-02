@@ -1,0 +1,57 @@
+{{define "content"}}
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Pemesanan Saya</h2>
+
+    {{if .Bookings}}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama Penyewa</th>
+                            <th>Tanggal Mulai</th>
+                            <th>Tanggal Selesai</th>
+                            <th>Durasi</th>
+                            <th>Total Harga</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Bookings}}
+                        <tr>
+                            <td><small class="text-muted">{{.ID}}</small></td>
+                            <td>{{.RenterName}}</td>
+                            <td>{{formatDate .StartDate}}</td>
+                            <td>{{formatDate .EndDate}}</td>
+                            <td>{{.Duration}} hari</td>
+                            <td class="fw-bold text-primary">{{formatCurrency .TotalPrice}}</td>
+                            <td>
+                                {{if eq .Status "pending"}}
+                                <span class="badge bg-warning text-dark">Menunggu</span>
+                                {{else if eq .Status "confirmed"}}
+                                <span class="badge bg-success">Dikonfirmasi</span>
+                                {{else if eq .Status "cancelled"}}
+                                <span class="badge bg-danger">Dibatalkan</span>
+                                {{else}}
+                                <span class="badge bg-secondary">{{.Status}}</span>
+                                {{end}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="text-center py-5">
+        <i class="bi bi-calendar-x text-muted" style="font-size:3rem;"></i>
+        <h5 class="mt-3 text-muted">Belum Ada Pemesanan</h5>
+        <p class="text-muted">Anda belum memiliki pemesanan. Mulai sewa ruangan sekarang!</p>
+        <a href="/rooms" class="btn btn-primary">Lihat Ruangan</a>
+    </div>
+    {{end}}
+</div>
+{{end}}

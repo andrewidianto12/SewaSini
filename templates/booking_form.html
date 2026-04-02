@@ -1,0 +1,50 @@
+{{define "content"}}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-calendar-check"></i> Form Pemesanan</h4>
+                </div>
+                <div class="card-body p-4">
+                    {{if .Room}}
+                    <div class="alert alert-info mb-4">
+                        <strong>Ruangan:</strong> {{.Room.Name}} &mdash; {{formatCurrency .Room.PricePerDay}}/hari
+                    </div>
+                    {{end}}
+                    <form action="/bookings" method="POST" id="bookingForm">
+                        {{if .Room}}<input type="hidden" name="room_id" value="{{.Room.ID}}">{{end}}
+                        <div class="mb-3">
+                            <label class="form-label">Nama Lengkap *</label>
+                            <input type="text" class="form-control" name="renter_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" name="renter_email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">No. Telepon *</label>
+                            <input type="tel" class="form-control" name="renter_phone" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tanggal Mulai *</label>
+                                <input type="date" class="form-control" name="start_date" id="startDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tanggal Selesai *</label>
+                                <input type="date" class="form-control" name="end_date" id="endDate" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Catatan</label>
+                            <textarea class="form-control" name="notes" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Pesan Sekarang</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,29 @@
+{{define "content"}}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-building text-primary fs-1"></i>
+                        <h3 class="fw-bold mt-2">Masuk ke SewaSini</h3>
+                        <p class="text-muted">Masuk untuk mengelola pemesanan Anda</p>
+                    </div>
+                    <form action="/login" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required placeholder="email@contoh.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3">Masuk</button>
+                        <p class="text-center text-muted mb-0">Belum punya akun? <a href="/register" class="text-primary">Daftar sekarang</a></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
