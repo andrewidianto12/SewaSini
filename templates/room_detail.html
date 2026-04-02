@@ -1,0 +1,113 @@
+{{define "content"}}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Beranda</a></li>
+            <li class="breadcrumb-item"><a href="/rooms">Ruangan</a></li>
+            <li class="breadcrumb-item active">{{.Room.Name}}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <img src="{{.Room.ImageURL}}" class="img-fluid rounded shadow mb-4" alt="{{.Room.Name}}" style="width:100%;max-height:400px;object-fit:cover;">
+            <h2 class="fw-bold">{{.Room.Name}}</h2>
+            <span class="badge badge-type-{{.Room.Type}} mb-3">{{typeLabel .Room.Type}}</span>
+            <p class="text-muted">{{.Room.Description}}</p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-people text-primary me-2 fs-5"></i>
+                        <div>
+                            <small class="text-muted">Kapasitas</small>
+                            <p class="mb-0 fw-semibold">{{.Room.Capacity}} orang</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-geo-alt text-primary me-2 fs-5"></i>
+                        <div>
+                            <small class="text-muted">Lokasi</small>
+                            <p class="mb-0 fw-semibold">{{.Room.Location}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3">Fasilitas</h5>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                {{range .Room.Amenities}}
+                <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-check-circle text-success me-1"></i>{{.}}</span>
+                {{end}}
+            </div>
+
+            <div class="card bg-light border-0 p-3 mb-4">
+                <h5 class="fw-bold mb-3">Harga Sewa</h5>
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Per Jam</small>
+                        <p class="fw-bold text-primary fs-5 mb-0">{{formatCurrency .Room.PricePerHour}}</p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Per Hari</small>
+                        <p class="fw-bold text-primary fs-5 mb-0">{{formatCurrency .Room.PricePerDay}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            {{if .Room.IsAvailable}}
+            <div class="card shadow-sm sticky-top" style="top:80px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Pesan Sekarang</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/bookings" method="POST" id="bookingForm">
+                        <input type="hidden" name="room_id" value="{{.Room.ID}}">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Lengkap *</label>
+                            <input type="text" class="form-control" name="renter_name" required placeholder="Masukkan nama lengkap">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" name="renter_email" required placeholder="email@contoh.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">No. Telepon *</label>
+                            <input type="tel" class="form-control" name="renter_phone" required placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Mulai *</label>
+                            <input type="date" class="form-control" name="start_date" id="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Selesai *</label>
+                            <input type="date" class="form-control" name="end_date" id="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Catatan</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Kebutuhan khusus, dll."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-calendar-check"></i> Pesan Sekarang
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {{else}}
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-x-circle text-danger fs-1 mb-3"></i>
+                    <h5 class="text-danger">Tidak Tersedia</h5>
+                    <p class="text-muted">Ruangan ini sedang tidak tersedia untuk disewa.</p>
+                    <a href="/rooms" class="btn btn-outline-primary">Lihat Ruangan Lain</a>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}

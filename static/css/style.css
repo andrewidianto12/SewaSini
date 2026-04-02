@@ -1,0 +1,107 @@
+:root {
+    --primary: #2563eb;
+    --accent: #f59e0b;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.text-primary {
+    color: var(--primary) !important;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+}
+
+.room-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.15) !important;
+}
+
+.badge-type-meeting_room {
+    background-color: #2563eb;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.badge-type-event_hall {
+    background-color: #7c3aed;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.badge-type-coworking {
+    background-color: #059669;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.filter-btn.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.btn-warning {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #1f2937;
+}
+
+.btn-warning:hover {
+    background-color: #d97706;
+    border-color: #d97706;
+    color: #1f2937;
+}
+
+footer {
+    background-color: #111827 !important;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 350px;
+    }
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+}
