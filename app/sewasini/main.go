@@ -43,7 +43,19 @@ func main() {
 	userRepo := repositoryuser.NewRepository(database.DB)
 	userService := serviceuser.NewService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
-	userHandler.RegisterRoutes(api)
+
+	{
+		usersGroup := api.Group("/users")
+		{
+			usersGroup.POST("/register", userHandler.RegisterUser)
+			usersGroup.POST("/send-otp", userHandler.SendOTP)
+			usersGroup.POST("/verify-otp", userHandler.VerifyOTP)
+			usersGroup.GET("", userHandler.ListUsers)
+			usersGroup.GET("/:id", userHandler.GetUserByID)
+			usersGroup.PUT("/:id", userHandler.UpdateUser)
+			usersGroup.DELETE("/:id", userHandler.DeleteUser)
+		}
+	}
 
 	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")

@@ -19,17 +19,7 @@ func NewUserHandler(service serviceuser.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) RegisterRoutes(group *echo.Group) {
-	group.POST("/users", h.CreateUser)
-	group.POST("/users/send-otp", h.SendOTP)
-	group.POST("/users/verify-otp", h.VerifyOTP)
-	group.GET("/users", h.ListUsers)
-	group.GET("/users/:id", h.GetUserByID)
-	group.PUT("/users/:id", h.UpdateUser)
-	group.DELETE("/users/:id", h.DeleteUser)
-}
-
-func (h *UserHandler) CreateUser(c echo.Context) error {
+func (h *UserHandler) RegisterUser(c echo.Context) error {
 	var req models.RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
