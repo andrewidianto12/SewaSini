@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	RegisterUser(ctx context.Context, req models.RegisterRequest) (*models.UserResponse, error)
+	Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error)
 	SendOTP(ctx context.Context, req models.OTPSendRequest) error
 	VerifyOTP(ctx context.Context, req models.OTPVerifyRequest) (*models.UserResponse, error)
 	GetUserByID(ctx context.Context, id string) (*models.UserResponse, error)

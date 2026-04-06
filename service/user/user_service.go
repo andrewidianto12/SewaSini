@@ -10,9 +10,11 @@ import (
 
 	"sewasini/models"
 	repositoryuser "sewasini/repository/user"
+	"sewasini/util"
 )
 
 var ErrEmailAlreadyUsed = errors.New("email already used")
+var ErrInvalidCredentials = errors.New("invalid email or password")
 var ErrUserNotVerified = errors.New("user not verified")
 var ErrInvalidOTP = errors.New("invalid otp")
 var ErrOTPExpiredOrNotFound = errors.New("otp expired or not found")
@@ -79,6 +81,35 @@ func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterReque
 	)
 
 	response := toUserResponse(user)
+	return &response, nil
+}
+
+func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error) {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return nil, err
+	}
+
+	if !user.IsVerified {
+		return nil, ErrUserNotVerified
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	token, err := util.GenerateToken(user.ID, user.NamaLengkap)
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.LoginResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		User:        toUserResponse(user),
+	}
+
 	return &response, nil
 }
 

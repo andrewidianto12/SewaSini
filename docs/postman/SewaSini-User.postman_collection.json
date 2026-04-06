@@ -51,6 +51,56 @@
       }
     },
     {
+      "name": "Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"budi@example.com\",\n  \"password\": \"rahasia123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "login"
+          ]
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const response = pm.response.json();",
+                "if (response && response.access_token) {",
+                "  pm.environment.set('accessToken', response.access_token);",
+                "}",
+                "if (response && response.token_type) {",
+                "  pm.environment.set('tokenType', response.token_type);",
+                "}",
+                "if (response && response.user && response.user.id) {",
+                "  pm.environment.set('userId', response.user.id);",
+                "}",
+                "if (response && response.user && response.user.email) {",
+                "  pm.environment.set('email', response.user.email);",
+                "}"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "Send OTP",
       "request": {
         "method": "POST",
@@ -108,7 +158,12 @@
       "name": "List Users",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/users",
           "host": [
@@ -125,7 +180,12 @@
       "name": "Get User By ID",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/users/{{userId}}",
           "host": [
@@ -147,6 +207,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
           }
         ],
         "body": {
@@ -170,7 +234,12 @@
       "name": "Delete User",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/users/{{userId}}",
           "host": [

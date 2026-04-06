@@ -39,6 +39,12 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type LoginResponse struct {
+	AccessToken string       `json:"access_token"`
+	TokenType   string       `json:"token_type"`
+	User        UserResponse `json:"user"`
+}
+
 type UpdateUserRequest struct {
 	Email       string   `json:"email"`
 	NamaLengkap string   `json:"nama_lengkap"`

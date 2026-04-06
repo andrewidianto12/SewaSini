@@ -36,6 +36,23 @@ func (h *UserHandler) RegisterUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, user)
 }
 
+func (h *UserHandler) LoginUser(c echo.Context) error {
+	var req models.LoginRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	loginResponse, err := h.service.Login(c.Request().Context(), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, loginResponse)
+}
+
 func (h *UserHandler) ListUsers(c echo.Context) error {
 	users, err := h.service.ListUsers(c.Request().Context())
 	if err != nil {
@@ -118,6 +135,10 @@ func (h *UserHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 	case errors.Is(err, serviceuser.ErrEmailAlreadyUsed):
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrInvalidCredentials):
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrUserNotVerified):
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
 	case errors.Is(err, serviceuser.ErrInvalidOTP):
 		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
 	case errors.Is(err, serviceuser.ErrOTPExpiredOrNotFound):

@@ -12,12 +12,12 @@ import (
 var ErrInvalidToken = errors.New("invalid token")
 
 type Claims struct {
-	ID       uint   `json:"id"`
+	ID       string `json:"id"`
 	FullName string `json:"full_name"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(ID uint, FullName string) (string, error) {
+func GenerateToken(ID string, FullName string) (string, error) {
 	claims := Claims{
 		ID:       ID,
 		FullName: FullName,
@@ -32,7 +32,7 @@ func GenerateToken(ID uint, FullName string) (string, error) {
 	return token.SignedString(getJWTSecret())
 }
 
-func ParseToken(tokenString string) (uint, error) {
+func ParseToken(tokenString string) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
@@ -40,18 +40,18 @@ func ParseToken(tokenString string) (uint, error) {
 		return getJWTSecret(), nil
 	})
 	if err != nil {
-		return 0, fmt.Errorf("parse token error: %w", err)
+		return "", fmt.Errorf("parse token error: %w", err)
 	}
 	if !token.Valid {
-		return 0, fmt.Errorf("token is not valid")
+		return "", fmt.Errorf("token is not valid")
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return 0, fmt.Errorf("invalid claims type")
+		return "", fmt.Errorf("invalid claims type")
 	}
-	if claims.ID == 0 {
-		return 0, fmt.Errorf("claim 'id' not found")
+	if claims.ID == "" {
+		return "", fmt.Errorf("claim 'id' not found")
 	}
 
 	return claims.ID, nil

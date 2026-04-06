@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	handler "sewasini/app/handler"
+	authmiddleware "sewasini/app/sewasini/middleware"
 	customvalidator "sewasini/app/sewasini/validator"
 	"sewasini/database"
 	repositoryuser "sewasini/repository/user"
@@ -48,12 +49,18 @@ func main() {
 		usersGroup := api.Group("/users")
 		{
 			usersGroup.POST("/register", userHandler.RegisterUser)
+			usersGroup.POST("/login", userHandler.LoginUser)
 			usersGroup.POST("/send-otp", userHandler.SendOTP)
 			usersGroup.POST("/verify-otp", userHandler.VerifyOTP)
-			usersGroup.GET("", userHandler.ListUsers)
-			usersGroup.GET("/:id", userHandler.GetUserByID)
-			usersGroup.PUT("/:id", userHandler.UpdateUser)
-			usersGroup.DELETE("/:id", userHandler.DeleteUser)
+
+			protectedUsersGroup := usersGroup.Group("")
+			protectedUsersGroup.Use(authmiddleware.BearerAuth())
+			{
+				protectedUsersGroup.GET("", userHandler.ListUsers)
+				protectedUsersGroup.GET("/:id", userHandler.GetUserByID)
+				protectedUsersGroup.PUT("/:id", userHandler.UpdateUser)
+				protectedUsersGroup.DELETE("/:id", userHandler.DeleteUser)
+			}
 		}
 	}
 
