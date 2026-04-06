@@ -54,6 +54,10 @@ type OTPVerifyRequest struct {
 	OTPCode string `json:"otp_code" validate:"required,len=6"`
 }
 
+type OTPSendRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
 type UserResponse struct {
 	ID          string    `json:"id"`
 	Email       string    `json:"email"`

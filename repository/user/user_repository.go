@@ -30,8 +30,8 @@ func NewRepository(db *sql.DB) *SQLRepository {
 func (r *SQLRepository) Create(ctx context.Context, user *models.User) error {
 	const query = `
 		INSERT INTO users (
-			email, nama_lengkap, ttl, no_hp, password, role, otp_code, otp_expiry, is_verified
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			email, nama_lengkap, ttl, no_hp, password, role, otp_code, is_verified
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -45,19 +45,30 @@ func (r *SQLRepository) Create(ctx context.Context, user *models.User) error {
 		user.Password,
 		user.Role,
 		user.OTPCode,
-		user.OTPExpiry,
 		user.IsVerified,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 }
 
 func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	const query = `
-		SELECT id, email, nama_lengkap, ttl, no_hp, password, role, otp_code, otp_expiry, is_verified, created_at, updated_at
+		SELECT
+			id::text,
+			email,
+			nama_lengkap,
+			COALESCE(ttl::text, ''),
+			COALESCE(no_hp, ''),
+			password,
+			role,
+			COALESCE(otp_code, ''),
+			is_verified,
+			created_at,
+			updated_at
 		FROM users
 		WHERE id = $1
 	`
 
 	user := &models.User{}
+	var otpCode sql.NullString
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Email,
@@ -66,8 +77,7 @@ func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.User, e
 		&user.NoHP,
 		&user.Password,
 		&user.Role,
-		&user.OTPCode,
-		&user.OTPExpiry,
+		&otpCode,
 		&user.IsVerified,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -78,18 +88,33 @@ func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.User, e
 		}
 		return nil, err
 	}
+	if otpCode.Valid {
+		user.OTPCode = otpCode.String
+	}
 
 	return user, nil
 }
 
 func (r *SQLRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	const query = `
-		SELECT id, email, nama_lengkap, ttl, no_hp, password, role, otp_code, otp_expiry, is_verified, created_at, updated_at
+		SELECT
+			id::text,
+			email,
+			nama_lengkap,
+			COALESCE(ttl::text, ''),
+			COALESCE(no_hp, ''),
+			password,
+			role,
+			COALESCE(otp_code, ''),
+			is_verified,
+			created_at,
+			updated_at
 		FROM users
 		WHERE email = $1
 	`
 
 	user := &models.User{}
+	var otpCode sql.NullString
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Email,
@@ -98,8 +123,7 @@ func (r *SQLRepository) GetByEmail(ctx context.Context, email string) (*models.U
 		&user.NoHP,
 		&user.Password,
 		&user.Role,
-		&user.OTPCode,
-		&user.OTPExpiry,
+		&otpCode,
 		&user.IsVerified,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -110,13 +134,27 @@ func (r *SQLRepository) GetByEmail(ctx context.Context, email string) (*models.U
 		}
 		return nil, err
 	}
+	if otpCode.Valid {
+		user.OTPCode = otpCode.String
+	}
 
 	return user, nil
 }
 
 func (r *SQLRepository) List(ctx context.Context) ([]models.User, error) {
 	const query = `
-		SELECT id, email, nama_lengkap, ttl, no_hp, password, role, otp_code, otp_expiry, is_verified, created_at, updated_at
+		SELECT
+			id::text,
+			email,
+			nama_lengkap,
+			COALESCE(ttl::text, ''),
+			COALESCE(no_hp, ''),
+			password,
+			role,
+			COALESCE(otp_code, ''),
+			is_verified,
+			created_at,
+			updated_at
 		FROM users
 		ORDER BY created_at DESC
 	`
@@ -130,6 +168,7 @@ func (r *SQLRepository) List(ctx context.Context) ([]models.User, error) {
 	var users []models.User
 	for rows.Next() {
 		var user models.User
+		var otpCode sql.NullString
 		if err := rows.Scan(
 			&user.ID,
 			&user.Email,
@@ -138,13 +177,15 @@ func (r *SQLRepository) List(ctx context.Context) ([]models.User, error) {
 			&user.NoHP,
 			&user.Password,
 			&user.Role,
-			&user.OTPCode,
-			&user.OTPExpiry,
+			&otpCode,
 			&user.IsVerified,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if otpCode.Valid {
+			user.OTPCode = otpCode.String
 		}
 		users = append(users, user)
 	}
@@ -166,8 +207,7 @@ func (r *SQLRepository) Update(ctx context.Context, user *models.User) error {
 			password = $6,
 			role = $7,
 			otp_code = $8,
-			otp_expiry = $9,
-			is_verified = $10,
+			is_verified = $9,
 			updated_at = NOW()
 		WHERE id = $1
 		RETURNING updated_at
@@ -184,7 +224,6 @@ func (r *SQLRepository) Update(ctx context.Context, user *models.User) error {
 		user.Password,
 		user.Role,
 		user.OTPCode,
-		user.OTPExpiry,
 		user.IsVerified,
 	).Scan(&user.UpdatedAt)
 	if err != nil {
