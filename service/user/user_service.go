@@ -20,6 +20,7 @@ var ErrUserNotVerified = errors.New("user not verified")
 var ErrInvalidOTP = errors.New("invalid otp")
 var ErrOTPExpiredOrNotFound = errors.New("otp expired or not found")
 var ErrPhoneNumberRequired = errors.New("phone number is required for otp")
+var ErrOTPEmailSendFailed = errors.New("failed to send otp email")
 
 type UserService struct {
 	repo     Repository
@@ -80,13 +81,15 @@ func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterReque
 		return nil, err
 	}
 
-	_ = s.emailer.Send(
+	if err := s.emailer.Send(
 		ctx,
 		user.Email,
 		"Kode OTP Verifikasi SewaSini",
 		fmt.Sprintf("Akun berhasil dibuat. Kode OTP verifikasi Anda: %s. Berlaku 5 menit.", otpCode),
 		fmt.Sprintf("<p>Akun berhasil dibuat.</p><p>Kode OTP verifikasi Anda: <strong>%s</strong></p><p>Berlaku 5 menit.</p>", otpCode),
-	)
+	); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrOTPEmailSendFailed, err)
+	}
 
 	response := toUserResponse(user)
 	return &response, nil
@@ -139,13 +142,15 @@ func (s *UserService) SendOTP(ctx context.Context, req models.OTPSendRequest) er
 		return err
 	}
 
-	_ = s.emailer.Send(
+	if err := s.emailer.Send(
 		ctx,
 		user.Email,
 		"Kode OTP SewaSini",
 		fmt.Sprintf("Kode OTP Anda: %s. Berlaku 5 menit.", generatedCode),
 		fmt.Sprintf("<p>Kode OTP Anda: <strong>%s</strong></p><p>Berlaku 5 menit.</p>", generatedCode),
-	)
+	); err != nil {
+		return fmt.Errorf("%w: %v", ErrOTPEmailSendFailed, err)
+	}
 
 	return nil
 }

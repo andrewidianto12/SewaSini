@@ -36,6 +36,18 @@ func (n *NoopEmailNotifier) Send(_ context.Context, _ string, _ string, _ string
 	return nil
 }
 
+type ErrorEmailNotifier struct {
+	err error
+}
+
+func (n *ErrorEmailNotifier) Send(_ context.Context, _ string, _ string, _ string, _ string) error {
+	if n.err == nil {
+		return errors.New("email notifier is not configured")
+	}
+
+	return n.err
+}
+
 type MailjetEmailNotifier struct {
 	mailer *util.MailjetMailer
 }
@@ -447,6 +459,7 @@ func loadEmailNotifierFromEnv() EmailNotifier {
 		if err == nil {
 			return notifier
 		}
+		return &ErrorEmailNotifier{err: fmt.Errorf("mailjet configuration error: %w", err)}
 	case "sendgrid":
 		notifier, err := NewSendGridEmailNotifierFromEnv()
 		if err == nil {
