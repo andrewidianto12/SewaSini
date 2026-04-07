@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"sewasini/util"
 )
 
 var ErrOTPNotFound = errors.New("otp not requested")
@@ -32,6 +34,23 @@ type NoopEmailNotifier struct{}
 
 func (n *NoopEmailNotifier) Send(_ context.Context, _ string, _ string, _ string, _ string) error {
 	return nil
+}
+
+type MailjetEmailNotifier struct {
+	mailer *util.MailjetMailer
+}
+
+func NewMailjetEmailNotifierFromEnv() (*MailjetEmailNotifier, error) {
+	mailer, err := util.NewMailjetMailerFromEnv()
+	if err != nil {
+		return nil, err
+	}
+
+	return &MailjetEmailNotifier{mailer: mailer}, nil
+}
+
+func (m *MailjetEmailNotifier) Send(ctx context.Context, toEmail, subject, textBody, htmlBody string) error {
+	return m.mailer.Send(ctx, toEmail, subject, textBody, htmlBody)
 }
 
 type SendGridEmailNotifier struct {
@@ -423,6 +442,11 @@ func (f *FirebaseOTPProvider) VerifyOTP(ctx context.Context, phoneNumber, code s
 func loadEmailNotifierFromEnv() EmailNotifier {
 	provider := strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_PROVIDER")))
 	switch provider {
+	case "", "mailjet":
+		notifier, err := NewMailjetEmailNotifierFromEnv()
+		if err == nil {
+			return notifier
+		}
 	case "sendgrid":
 		notifier, err := NewSendGridEmailNotifierFromEnv()
 		if err == nil {
@@ -450,6 +474,8 @@ func loadOTPProviderFromEnv() OTPProvider {
 		if err == nil {
 			return otp
 		}
+	case "mailjet":
+		return NewLocalOTPProvider()
 	}
 	return NewLocalOTPProvider()
 }

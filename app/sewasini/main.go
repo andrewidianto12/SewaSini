@@ -43,8 +43,6 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	api := e.Group("/api/v1")
-
 	userRepo := repositoryuser.NewRepository(database.DB)
 	userService := serviceuser.NewService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
@@ -55,36 +53,8 @@ func main() {
 	bookingService := servicebooking.NewService(bookingRepo, roomRepo)
 	bookingHandler := handler.NewBookingHandler(bookingService)
 
-	{
-		usersGroup := api.Group("/users")
-		{
-			usersGroup.POST("/register", userHandler.RegisterUser)
-			usersGroup.POST("/login", userHandler.LoginUser)
-			usersGroup.POST("/send-otp", userHandler.SendOTP)
-			usersGroup.POST("/verify-otp", userHandler.VerifyOTP)
-
-			protectedUsersGroup := usersGroup.Group("")
-			protectedUsersGroup.Use(authmiddleware.BearerAuth())
-			{
-				protectedUsersGroup.GET("", userHandler.ListUsers)
-				protectedUsersGroup.GET("/:id", userHandler.GetUserByID)
-				protectedUsersGroup.PUT("/:id", userHandler.UpdateUser)
-				protectedUsersGroup.DELETE("/:id", userHandler.DeleteUser)
-			}
-		}
-
-		roomsGroup := api.Group("/ruangan")
-		{
-			roomsGroup.GET("", roomHandler.ListRooms)
-			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
-		}
-
-		bookingsGroup := api.Group("/bookings")
-		bookingsGroup.Use(authmiddleware.BearerAuth())
-		{
-			bookingsGroup.POST("", bookingHandler.CreateBooking)
-		}
-	}
+	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, bookingHandler)
+	registerRoutes(e.Group("/api"), userHandler, roomHandler, bookingHandler)
 
 	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")
@@ -118,6 +88,44 @@ func main() {
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func registerRoutes(
+	api *echo.Group,
+	userHandler *handler.UserHandler,
+	roomHandler *handler.RoomHandler,
+	bookingHandler *handler.BookingHandler,
+) {
+	{
+		usersGroup := api.Group("/users")
+		{
+			usersGroup.POST("/register", userHandler.RegisterUser)
+			usersGroup.POST("/login", userHandler.LoginUser)
+			usersGroup.POST("/send-otp", userHandler.SendOTP)
+			usersGroup.POST("/verify-otp", userHandler.VerifyOTP)
+
+			protectedUsersGroup := usersGroup.Group("")
+			protectedUsersGroup.Use(authmiddleware.BearerAuth())
+			{
+				protectedUsersGroup.GET("", userHandler.ListUsers)
+				protectedUsersGroup.GET("/:id", userHandler.GetUserByID)
+				protectedUsersGroup.PUT("/:id", userHandler.UpdateUser)
+				protectedUsersGroup.DELETE("/:id", userHandler.DeleteUser)
+			}
+		}
+
+		roomsGroup := api.Group("/ruangan")
+		{
+			roomsGroup.GET("", roomHandler.ListRooms)
+			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
+		}
+
+		bookingsGroup := api.Group("/bookings")
+		bookingsGroup.Use(authmiddleware.BearerAuth())
+		{
+			bookingsGroup.POST("", bookingHandler.CreateBooking)
+		}
 	}
 }
 
