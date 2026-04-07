@@ -18,7 +18,11 @@ import (
 	authmiddleware "sewasini/app/sewasini/middleware"
 	customvalidator "sewasini/app/sewasini/validator"
 	"sewasini/database"
+	repositorybooking "sewasini/repository/booking"
+	repositoryroom "sewasini/repository/room"
 	repositoryuser "sewasini/repository/user"
+	servicebooking "sewasini/service/booking"
+	serviceroom "sewasini/service/room"
 	serviceuser "sewasini/service/user"
 )
 
@@ -39,11 +43,17 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	api := e.Group("/api")
+	api := e.Group("/api/v1")
 
 	userRepo := repositoryuser.NewRepository(database.DB)
 	userService := serviceuser.NewService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
+	roomRepo := repositoryroom.NewRepository(database.DB)
+	roomService := serviceroom.NewService(roomRepo)
+	roomHandler := handler.NewRoomHandler(roomService)
+	bookingRepo := repositorybooking.NewRepository(database.DB)
+	bookingService := servicebooking.NewService(bookingRepo, roomRepo)
+	bookingHandler := handler.NewBookingHandler(bookingService)
 
 	{
 		usersGroup := api.Group("/users")
@@ -61,6 +71,18 @@ func main() {
 				protectedUsersGroup.PUT("/:id", userHandler.UpdateUser)
 				protectedUsersGroup.DELETE("/:id", userHandler.DeleteUser)
 			}
+		}
+
+		roomsGroup := api.Group("/ruangan")
+		{
+			roomsGroup.GET("", roomHandler.ListRooms)
+			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
+		}
+
+		bookingsGroup := api.Group("/bookings")
+		bookingsGroup.Use(authmiddleware.BearerAuth())
+		{
+			bookingsGroup.POST("", bookingHandler.CreateBooking)
 		}
 	}
 
