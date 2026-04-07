@@ -3,25 +3,49 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 
 	"sewasini/models"
 	repositoryuser "sewasini/repository/user"
+	"sewasini/util"
 )
 
 var ErrEmailAlreadyUsed = errors.New("email already used")
+var ErrInvalidCredentials = errors.New("invalid email or password")
+var ErrUserNotVerified = errors.New("user not verified")
+var ErrInvalidOTP = errors.New("invalid otp")
+var ErrOTPExpiredOrNotFound = errors.New("otp expired or not found")
+var ErrPhoneNumberRequired = errors.New("phone number is required for otp")
 
 type UserService struct {
-	repo Repository
+	repo     Repository
+	emailer  EmailNotifier
+	otpAgent OTPProvider
 }
 
 func NewService(repo Repository) *UserService {
-	return &UserService{repo: repo}
+	return NewServiceWithProvider(repo, loadEmailNotifierFromEnv(), loadOTPProviderFromEnv())
 }
 
-func (s *UserService) CreateUser(ctx context.Context, req models.RegisterRequest) (*models.UserResponse, error) {
+func NewServiceWithProvider(repo Repository, emailer EmailNotifier, otpAgent OTPProvider) *UserService {
+	if emailer == nil {
+		emailer = &NoopEmailNotifier{}
+	}
+	if otpAgent == nil {
+		otpAgent = NewLocalOTPProvider()
+	}
+
+	return &UserService{
+		repo:     repo,
+		emailer:  emailer,
+		otpAgent: otpAgent,
+	}
+}
+
+func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterRequest) (*models.UserResponse, error) {
 	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
 	if _, err := s.repo.GetByEmail(ctx, normalizedEmail); err == nil {
 		return nil, ErrEmailAlreadyUsed
@@ -47,6 +71,126 @@ func (s *UserService) CreateUser(ctx context.Context, req models.RegisterRequest
 	if err := s.repo.Create(ctx, user); err != nil {
 		return nil, err
 	}
+
+	_ = s.emailer.Send(
+		ctx,
+		user.Email,
+		"Selamat Datang di SewaSini",
+		"Akun Anda berhasil dibuat. Silakan lakukan verifikasi OTP untuk mengaktifkan akun.",
+		"<p>Akun Anda berhasil dibuat.</p><p>Silakan lakukan verifikasi OTP untuk mengaktifkan akun.</p>",
+	)
+
+	response := toUserResponse(user)
+	return &response, nil
+}
+
+func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (*models.LoginResponse, error) {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return nil, err
+	}
+
+	if !user.IsVerified {
+		return nil, ErrUserNotVerified
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	token, err := util.GenerateToken(user.ID, user.NamaLengkap)
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.LoginResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		User:        toUserResponse(user),
+	}
+
+	return &response, nil
+}
+
+func (s *UserService) SendOTP(ctx context.Context, req models.OTPSendRequest) error {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return err
+	}
+
+	phone := strings.TrimSpace(user.NoHP)
+	if phone == "" {
+		return ErrPhoneNumberRequired
+	}
+
+	generatedCode, err := s.otpAgent.SendOTP(ctx, phone)
+	if err != nil {
+		return err
+	}
+
+	if generatedCode != "" {
+		user.OTPCode = generatedCode
+		if err := s.repo.Update(ctx, user); err != nil {
+			return err
+		}
+	}
+
+	txtMessage := "Kode OTP sudah dikirim ke nomor handphone terdaftar."
+	htmlMessage := "<p>Kode OTP sudah dikirim ke nomor handphone terdaftar.</p>"
+	if generatedCode != "" {
+		txtMessage = fmt.Sprintf("Kode OTP Anda: %s", generatedCode)
+		htmlMessage = fmt.Sprintf("<p>Kode OTP Anda: <strong>%s</strong></p>", generatedCode)
+	}
+
+	_ = s.emailer.Send(
+		ctx,
+		user.Email,
+		"Kode OTP SewaSini",
+		txtMessage,
+		htmlMessage,
+	)
+
+	return nil
+}
+
+func (s *UserService) VerifyOTP(ctx context.Context, req models.OTPVerifyRequest) (*models.UserResponse, error) {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return nil, err
+	}
+
+	phone := strings.TrimSpace(user.NoHP)
+	if phone == "" {
+		return nil, ErrPhoneNumberRequired
+	}
+
+	ok, err := s.otpAgent.VerifyOTP(ctx, phone, strings.TrimSpace(req.OTPCode))
+	if err != nil {
+		if errors.Is(err, ErrOTPNotFound) {
+			return nil, ErrOTPExpiredOrNotFound
+		}
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrInvalidOTP
+	}
+
+	user.IsVerified = true
+	user.OTPCode = ""
+	if err := s.repo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	_ = s.emailer.Send(
+		ctx,
+		user.Email,
+		"Verifikasi Berhasil",
+		"Akun Anda telah berhasil diverifikasi.",
+		"<p>Akun Anda telah berhasil diverifikasi.</p>",
+	)
 
 	response := toUserResponse(user)
 	return &response, nil

@@ -19,26 +19,38 @@ func NewUserHandler(service serviceuser.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) RegisterRoutes(group *echo.Group) {
-	group.POST("/users", h.CreateUser)
-	group.GET("/users", h.ListUsers)
-	group.GET("/users/:id", h.GetUserByID)
-	group.PUT("/users/:id", h.UpdateUser)
-	group.DELETE("/users/:id", h.DeleteUser)
-}
-
-func (h *UserHandler) CreateUser(c echo.Context) error {
+func (h *UserHandler) RegisterUser(c echo.Context) error {
 	var req models.RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
 	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
 
-	user, err := h.service.CreateUser(c.Request().Context(), req)
+	user, err := h.service.RegisterUser(c.Request().Context(), req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
 
 	return c.JSON(http.StatusCreated, user)
+}
+
+func (h *UserHandler) LoginUser(c echo.Context) error {
+	var req models.LoginRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	loginResponse, err := h.service.Login(c.Request().Context(), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, loginResponse)
 }
 
 func (h *UserHandler) ListUsers(c echo.Context) error {
@@ -48,6 +60,39 @@ func (h *UserHandler) ListUsers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, users)
+}
+
+func (h *UserHandler) SendOTP(c echo.Context) error {
+	var req models.OTPSendRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	if err := h.service.SendOTP(c.Request().Context(), req); err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "otp sent"})
+}
+
+func (h *UserHandler) VerifyOTP(c echo.Context) error {
+	var req models.OTPVerifyRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	user, err := h.service.VerifyOTP(c.Request().Context(), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, user)
 }
 
 func (h *UserHandler) GetUserByID(c echo.Context) error {
@@ -63,6 +108,9 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 	var req models.UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 
 	user, err := h.service.UpdateUser(c.Request().Context(), c.Param("id"), req)
@@ -87,6 +135,16 @@ func (h *UserHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 	case errors.Is(err, serviceuser.ErrEmailAlreadyUsed):
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrInvalidCredentials):
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrUserNotVerified):
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrInvalidOTP):
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrOTPExpiredOrNotFound):
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrPhoneNumberRequired):
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	default:
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})
 	}

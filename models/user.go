@@ -39,6 +39,12 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type LoginResponse struct {
+	AccessToken string       `json:"access_token"`
+	TokenType   string       `json:"token_type"`
+	User        UserResponse `json:"user"`
+}
+
 type UpdateUserRequest struct {
 	Email       string   `json:"email"`
 	NamaLengkap string   `json:"nama_lengkap"`
@@ -52,6 +58,10 @@ type UpdateUserRequest struct {
 type OTPVerifyRequest struct {
 	Email   string `json:"email" validate:"required,email"`
 	OTPCode string `json:"otp_code" validate:"required,len=6"`
+}
+
+type OTPSendRequest struct {
+	Email string `json:"email" validate:"required,email"`
 }
 
 type UserResponse struct {
