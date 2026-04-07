@@ -19,10 +19,12 @@ import (
 	customvalidator "sewasini/app/sewasini/validator"
 	"sewasini/database"
 	repositorybooking "sewasini/repository/booking"
+	repositorycategory "sewasini/repository/category"
 	repositoryreview "sewasini/repository/review"
 	repositoryroom "sewasini/repository/room"
 	repositoryuser "sewasini/repository/user"
 	servicebooking "sewasini/service/booking"
+	servicecategory "sewasini/service/category"
 	servicereview "sewasini/service/review"
 	serviceroom "sewasini/service/room"
 	serviceuser "sewasini/service/user"
@@ -51,6 +53,9 @@ func main() {
 	roomRepo := repositoryroom.NewRepository(database.DB)
 	roomService := serviceroom.NewService(roomRepo)
 	roomHandler := handler.NewRoomHandler(roomService)
+	categoryRepo := repositorycategory.NewRepository(database.DB)
+	categoryService := servicecategory.NewService(categoryRepo)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
 	reviewRepo := repositoryreview.NewRepository(database.DB)
 	reviewService := servicereview.NewService(reviewRepo)
 	reviewHandler := handler.NewReviewHandler(reviewService)
@@ -58,8 +63,8 @@ func main() {
 	bookingService := servicebooking.NewService(bookingRepo, roomRepo)
 	bookingHandler := handler.NewBookingHandler(bookingService)
 
-	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, reviewHandler, bookingHandler)
-	registerRoutes(e.Group("/api"), userHandler, roomHandler, reviewHandler, bookingHandler)
+	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler)
+	registerRoutes(e.Group("/api"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler)
 
 	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")
@@ -100,6 +105,7 @@ func registerRoutes(
 	api *echo.Group,
 	userHandler *handler.UserHandler,
 	roomHandler *handler.RoomHandler,
+	categoryHandler *handler.CategoryHandler,
 	reviewHandler *handler.ReviewHandler,
 	bookingHandler *handler.BookingHandler,
 ) {
@@ -126,6 +132,21 @@ func registerRoutes(
 		{
 			roomsGroup.GET("", roomHandler.ListRooms)
 			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
+		}
+
+		categoriesGroup := api.Group("/categories")
+		{
+			categoriesGroup.GET("", categoryHandler.ListCategories)
+			categoriesGroup.GET("/:id", categoryHandler.GetCategoryByID)
+
+			adminCategoriesGroup := categoriesGroup.Group("")
+			adminCategoriesGroup.Use(authmiddleware.BearerAuth())
+			adminCategoriesGroup.Use(authmiddleware.AdminOnly())
+			{
+				adminCategoriesGroup.POST("", categoryHandler.CreateCategory)
+				adminCategoriesGroup.PUT("/:id", categoryHandler.UpdateCategory)
+				adminCategoriesGroup.DELETE("/:id", categoryHandler.DeleteCategory)
+			}
 		}
 
 		reviewsGroup := api.Group("/reviews")
