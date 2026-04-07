@@ -64,12 +64,24 @@ func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (
 		argPos++
 	}
 	if filter.MinHarga > 0 {
-		conditions = append(conditions, fmt.Sprintf("r.harga_per_hari >= $%d", argPos))
+		conditions = append(conditions, fmt.Sprintf(`
+			CASE
+				WHEN r.harga_per_jam > 0 AND r.harga_per_hari > 0 THEN LEAST(r.harga_per_jam, r.harga_per_hari)
+				WHEN r.harga_per_jam > 0 THEN r.harga_per_jam
+				ELSE r.harga_per_hari
+			END >= $%d
+		`, argPos))
 		args = append(args, filter.MinHarga)
 		argPos++
 	}
 	if filter.MaxHarga > 0 {
-		conditions = append(conditions, fmt.Sprintf("r.harga_per_hari <= $%d", argPos))
+		conditions = append(conditions, fmt.Sprintf(`
+			CASE
+				WHEN r.harga_per_jam > 0 AND r.harga_per_hari > 0 THEN LEAST(r.harga_per_jam, r.harga_per_hari)
+				WHEN r.harga_per_jam > 0 THEN r.harga_per_jam
+				ELSE r.harga_per_hari
+			END <= $%d
+		`, argPos))
 		args = append(args, filter.MaxHarga)
 		argPos++
 	}
