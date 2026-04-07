@@ -12,6 +12,7 @@ var ErrUserIDRequired = errors.New("user id is required")
 var ErrForbiddenReviewAccess = errors.New("forbidden review access")
 var ErrBookingMismatch = errors.New("booking does not match room")
 var ErrReviewUpdateEmpty = errors.New("at least one field must be provided")
+var ErrInsufficientRole = errors.New("only users can create reviews")
 
 type Repository interface {
 	Create(ctx context.Context, review *models.Review) error
@@ -24,7 +25,7 @@ type Repository interface {
 }
 
 type Service interface {
-	CreateReview(ctx context.Context, userID string, req models.CreateReviewRequest) (*models.ReviewResponse, error)
+	CreateReview(ctx context.Context, userID, userRole string, req models.CreateReviewRequest) (*models.ReviewResponse, error)
 	ListReviews(ctx context.Context, userID string) ([]models.ReviewResponse, error)
 	GetReviewByID(ctx context.Context, userID, id string) (*models.ReviewResponse, error)
 	UpdateReview(ctx context.Context, userID, id string, req models.UpdateReviewRequest) (*models.ReviewResponse, error)

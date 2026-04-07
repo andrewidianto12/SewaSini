@@ -30,7 +30,8 @@ func (h *ReviewHandler) CreateReview(c echo.Context) error {
 	}
 
 	userID, _ := c.Get(authmiddleware.ContextUserIDKey).(string)
-	review, err := h.service.CreateReview(c.Request().Context(), userID, req)
+	userRole, _ := c.Get(authmiddleware.ContextUserRoleKey).(string)
+	review, err := h.service.CreateReview(c.Request().Context(), userID, userRole, req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -93,7 +94,7 @@ func (h *ReviewHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
 	case errors.Is(err, servicereview.ErrUserIDRequired), errors.Is(err, servicereview.ErrReviewUpdateEmpty), errors.Is(err, servicereview.ErrBookingMismatch):
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
-	case errors.Is(err, servicereview.ErrForbiddenReviewAccess):
+	case errors.Is(err, servicereview.ErrInsufficientRole), errors.Is(err, servicereview.ErrForbiddenReviewAccess):
 		return c.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
 	default:
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})

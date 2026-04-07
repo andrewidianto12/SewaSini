@@ -33,7 +33,21 @@ func BearerAuth() echo.MiddlewareFunc {
 				return c.JSON(http.StatusUnauthorized, map[string]string{"message": "invalid or expired token"})
 			}
 
+			var role string
+			err = database.DB.QueryRowContext(
+				c.Request().Context(),
+				`SELECT role FROM users WHERE id::text = $1`,
+				userID,
+			).Scan(&role)
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthorized"})
+				}
+				return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})
+			}
+
 			c.Set(ContextUserIDKey, userID)
+			c.Set(ContextUserRoleKey, role)
 			return next(c)
 		}
 	}
