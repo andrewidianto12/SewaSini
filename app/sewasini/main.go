@@ -107,6 +107,7 @@ func registerRoutes(
 
 			protectedUsersGroup := usersGroup.Group("")
 			protectedUsersGroup.Use(authmiddleware.BearerAuth())
+			protectedUsersGroup.Use(authmiddleware.AdminOnly())
 			{
 				protectedUsersGroup.GET("", userHandler.ListUsers)
 				protectedUsersGroup.GET("/:id", userHandler.GetUserByID)
