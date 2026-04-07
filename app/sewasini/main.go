@@ -19,9 +19,11 @@ import (
 	customvalidator "sewasini/app/sewasini/validator"
 	"sewasini/database"
 	repositorybooking "sewasini/repository/booking"
+	repositoryreview "sewasini/repository/review"
 	repositoryroom "sewasini/repository/room"
 	repositoryuser "sewasini/repository/user"
 	servicebooking "sewasini/service/booking"
+	servicereview "sewasini/service/review"
 	serviceroom "sewasini/service/room"
 	serviceuser "sewasini/service/user"
 )
@@ -49,12 +51,15 @@ func main() {
 	roomRepo := repositoryroom.NewRepository(database.DB)
 	roomService := serviceroom.NewService(roomRepo)
 	roomHandler := handler.NewRoomHandler(roomService)
+	reviewRepo := repositoryreview.NewRepository(database.DB)
+	reviewService := servicereview.NewService(reviewRepo)
+	reviewHandler := handler.NewReviewHandler(reviewService)
 	bookingRepo := repositorybooking.NewRepository(database.DB)
 	bookingService := servicebooking.NewService(bookingRepo, roomRepo)
 	bookingHandler := handler.NewBookingHandler(bookingService)
 
-	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, bookingHandler)
-	registerRoutes(e.Group("/api"), userHandler, roomHandler, bookingHandler)
+	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, reviewHandler, bookingHandler)
+	registerRoutes(e.Group("/api"), userHandler, roomHandler, reviewHandler, bookingHandler)
 
 	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")
@@ -95,6 +100,7 @@ func registerRoutes(
 	api *echo.Group,
 	userHandler *handler.UserHandler,
 	roomHandler *handler.RoomHandler,
+	reviewHandler *handler.ReviewHandler,
 	bookingHandler *handler.BookingHandler,
 ) {
 	{
@@ -120,6 +126,16 @@ func registerRoutes(
 		{
 			roomsGroup.GET("", roomHandler.ListRooms)
 			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
+		}
+
+		reviewsGroup := api.Group("/reviews")
+		reviewsGroup.Use(authmiddleware.BearerAuth())
+		{
+			reviewsGroup.POST("", reviewHandler.CreateReview)
+			reviewsGroup.GET("", reviewHandler.ListReviews)
+			reviewsGroup.GET("/:id", reviewHandler.GetReviewByID)
+			reviewsGroup.PUT("/:id", reviewHandler.UpdateReview)
+			reviewsGroup.DELETE("/:id", reviewHandler.DeleteReview)
 		}
 
 		bookingsGroup := api.Group("/bookings")
