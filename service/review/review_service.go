@@ -17,10 +17,14 @@ func NewService(repo Repository) *ReviewService {
 	return &ReviewService{repo: repo}
 }
 
-func (s *ReviewService) CreateReview(ctx context.Context, userID string, req models.CreateReviewRequest) (*models.ReviewResponse, error) {
+func (s *ReviewService) CreateReview(ctx context.Context, userID, userRole string, req models.CreateReviewRequest) (*models.ReviewResponse, error) {
 	userID = normalizeText(userID)
 	if userID == "" {
 		return nil, ErrUserIDRequired
+	}
+
+	if !strings.EqualFold(strings.TrimSpace(userRole), "user") {
+		return nil, ErrInsufficientRole
 	}
 
 	booking, err := s.repo.GetBookingByID(ctx, normalizeText(req.BookingID))
@@ -28,9 +32,6 @@ func (s *ReviewService) CreateReview(ctx context.Context, userID string, req mod
 		return nil, err
 	}
 
-	if booking.UserID != userID {
-		return nil, ErrForbiddenReviewAccess
-	}
 	if booking.RuanganID != normalizeText(req.RuanganID) {
 		return nil, ErrBookingMismatch
 	}
@@ -69,10 +70,6 @@ func (s *ReviewService) GetReviewByID(ctx context.Context, userID, id string) (*
 	review, err := s.repo.GetByID(ctx, normalizeText(id))
 	if err != nil {
 		return nil, err
-	}
-
-	if review.UserID != normalizeText(userID) {
-		return nil, ErrForbiddenReviewAccess
 	}
 
 	return review, nil
