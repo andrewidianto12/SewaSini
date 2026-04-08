@@ -3,6 +3,7 @@ package booking
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"sewasini/models"
 )
@@ -10,6 +11,8 @@ import (
 type SQLRepository struct {
 	db *sql.DB
 }
+
+var ErrBookingNotFound = errors.New("booking not found")
 
 func NewRepository(db *sql.DB) *SQLRepository {
 	return &SQLRepository{db: db}
@@ -28,7 +31,7 @@ func (r *SQLRepository) Create(ctx context.Context, booking *models.Booking) err
 			payment_status,
 			booking_code
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, created_at, updated_at
+		RETURNING id::text, created_at, updated_at
 	`
 
 	return r.db.QueryRowContext(
@@ -51,7 +54,7 @@ func (r *SQLRepository) HasActiveOverlap(ctx context.Context, ruanganID string, 
 		SELECT EXISTS (
 			SELECT 1
 			FROM bookings
-			WHERE ruangan_id = $1
+			WHERE ruangan_id::text = $1
 				AND status IN ('pending', 'confirmed')
 				AND tanggal_mulai < $3::timestamp
 				AND tanggal_selesai > $2::timestamp
@@ -64,4 +67,73 @@ func (r *SQLRepository) HasActiveOverlap(ctx context.Context, ruanganID string, 
 	}
 
 	return exists, nil
+}
+
+func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.Booking, error) {
+	const query = `
+		SELECT
+			id::text,
+			user_id::text,
+			ruangan_id::text,
+			tanggal_mulai,
+			tanggal_selesai,
+			jumlah_peserta,
+			total_harga,
+			status,
+			payment_status,
+			booking_code,
+			created_at,
+			updated_at
+		FROM bookings
+		WHERE id::text = $1
+	`
+
+	booking := &models.Booking{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&booking.ID,
+		&booking.UserID,
+		&booking.RuanganID,
+		&booking.TanggalMulai,
+		&booking.TanggalSelesai,
+		&booking.JumlahPeserta,
+		&booking.TotalHarga,
+		&booking.Status,
+		&booking.PaymentStatus,
+		&booking.BookingCode,
+		&booking.CreatedAt,
+		&booking.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrBookingNotFound
+		}
+		return nil, err
+	}
+
+	return booking, nil
+}
+
+func (r *SQLRepository) MarkPaidAndConfirmed(ctx context.Context, bookingID string) error {
+	const query = `
+		UPDATE bookings
+		SET payment_status = 'paid',
+			status = 'confirmed',
+			updated_at = NOW()
+		WHERE id::text = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query, bookingID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrBookingNotFound
+	}
+
+	return nil
 }

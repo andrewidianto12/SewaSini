@@ -22,11 +22,13 @@ import (
 	repositorycategory "sewasini/repository/category"
 	repositoryreview "sewasini/repository/review"
 	repositoryroom "sewasini/repository/room"
+	repositorytransaction "sewasini/repository/transaction"
 	repositoryuser "sewasini/repository/user"
 	servicebooking "sewasini/service/booking"
 	servicecategory "sewasini/service/category"
 	servicereview "sewasini/service/review"
 	serviceroom "sewasini/service/room"
+	servicetransaction "sewasini/service/transaction"
 	serviceuser "sewasini/service/user"
 )
 
@@ -62,9 +64,12 @@ func main() {
 	bookingRepo := repositorybooking.NewRepository(database.DB)
 	bookingService := servicebooking.NewService(bookingRepo, roomRepo)
 	bookingHandler := handler.NewBookingHandler(bookingService)
+	transactionRepo := repositorytransaction.NewRepository(database.DB)
+	transactionService := servicetransaction.NewService(transactionRepo, bookingRepo, userRepo)
+	paymentHandler := handler.NewPaymentHandler(transactionService)
 
-	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler)
-	registerRoutes(e.Group("/api"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler)
+	registerRoutes(e.Group("/api/v1"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler, paymentHandler)
+	registerRoutes(e.Group("/api"), userHandler, roomHandler, categoryHandler, reviewHandler, bookingHandler, paymentHandler)
 
 	host := os.Getenv("APP_HOST")
 	port := os.Getenv("APP_PORT")
@@ -108,6 +113,7 @@ func registerRoutes(
 	categoryHandler *handler.CategoryHandler,
 	reviewHandler *handler.ReviewHandler,
 	bookingHandler *handler.BookingHandler,
+	paymentHandler *handler.PaymentHandler,
 ) {
 	{
 		usersGroup := api.Group("/users")
@@ -163,6 +169,15 @@ func registerRoutes(
 		bookingsGroup.Use(authmiddleware.BearerAuth())
 		{
 			bookingsGroup.POST("", bookingHandler.CreateBooking)
+		}
+
+		paymentsGroup := api.Group("/payments")
+		{
+			protectedPaymentsGroup := paymentsGroup.Group("")
+			protectedPaymentsGroup.Use(authmiddleware.BearerAuth())
+			protectedPaymentsGroup.POST("", paymentHandler.CreatePayment)
+
+			paymentsGroup.POST("/callback", paymentHandler.PaymentCallback)
 		}
 	}
 }

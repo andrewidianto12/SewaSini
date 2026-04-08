@@ -7,10 +7,10 @@ import (
 type TransactionStatus string
 
 const (
-	TransactionPending  TransactionStatus = "pending"
-	TransactionSuccess  TransactionStatus = "success"
-	TransactionFailed   TransactionStatus = "failed"
-	TransactionExpired  TransactionStatus = "expired"
+	TransactionPending TransactionStatus = "pending"
+	TransactionSuccess TransactionStatus = "success"
+	TransactionFailed  TransactionStatus = "failed"
+	TransactionExpired TransactionStatus = "expired"
 )
 
 type Transaction struct {
@@ -21,8 +21,11 @@ type Transaction struct {
 	PaymentMethod   string            `json:"payment_method" db:"payment_method"`
 	TransactionDate time.Time         `json:"transaction_date" db:"transaction_date"`
 	Status          TransactionStatus `json:"status" db:"status"`
+	ExternalID      string            `json:"external_id" db:"external_id"`
 	XenditID        string            `json:"xendit_id" db:"xendit_id"`
+	LastWebhookID   string            `json:"-" db:"last_webhook_id"`
 	PaymentURL      string            `json:"payment_url" db:"payment_url"`
+	EmailSentAt     time.Time         `json:"-" db:"email_sent_at"`
 	CreatedAt       time.Time         `json:"created_at" db:"created_at"`
 }
 
@@ -38,11 +41,14 @@ type TransactionResponse struct {
 	PaymentMethod   string            `json:"payment_method"`
 	TransactionDate time.Time         `json:"transaction_date"`
 	Status          TransactionStatus `json:"status"`
+	ExternalID      string            `json:"external_id"`
 	PaymentURL      string            `json:"payment_url,omitempty"`
 	CreatedAt       time.Time         `json:"created_at"`
 }
 
 type XenditCallbackRequest struct {
+	ID         string `json:"id"`
 	ExternalID string `json:"external_id"`
 	Status     string `json:"status"`
+	WebhookID  string `json:"-"`
 }

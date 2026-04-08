@@ -19,6 +19,7 @@ bin/
 dist/
 build/
 tmp/
+.gocache/
 
 # Logs
 *.log
