@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -19,6 +20,7 @@ var ErrUserNotVerified = errors.New("user not verified")
 var ErrInvalidOTP = errors.New("invalid otp")
 var ErrOTPExpiredOrNotFound = errors.New("otp expired or not found")
 var ErrPhoneNumberRequired = errors.New("phone number is required for otp")
+var ErrOTPEmailSendFailed = errors.New("failed to send otp email")
 
 type UserService struct {
 	repo     Repository
@@ -58,6 +60,11 @@ func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterReque
 		return nil, err
 	}
 
+	otpCode, err := generateNumericOTP(6)
+	if err != nil {
+		return nil, err
+	}
+
 	user := &models.User{
 		Email:       normalizedEmail,
 		NamaLengkap: strings.TrimSpace(req.NamaLengkap),
@@ -65,6 +72,8 @@ func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterReque
 		NoHP:        strings.TrimSpace(req.NoHP),
 		Password:    hashedPassword,
 		Role:        models.RoleUser,
+		OTPCode:     otpCode,
+		OTPExpiry:   time.Now().Add(5 * time.Minute),
 		IsVerified:  false,
 	}
 
@@ -72,13 +81,15 @@ func (s *UserService) RegisterUser(ctx context.Context, req models.RegisterReque
 		return nil, err
 	}
 
-	_ = s.emailer.Send(
+	if err := s.emailer.Send(
 		ctx,
 		user.Email,
-		"Selamat Datang di SewaSini",
-		"Akun Anda berhasil dibuat. Silakan lakukan verifikasi OTP untuk mengaktifkan akun.",
-		"<p>Akun Anda berhasil dibuat.</p><p>Silakan lakukan verifikasi OTP untuk mengaktifkan akun.</p>",
-	)
+		"Kode OTP Verifikasi SewaSini",
+		fmt.Sprintf("Akun berhasil dibuat. Kode OTP verifikasi Anda: %s. Berlaku 5 menit.", otpCode),
+		fmt.Sprintf("<p>Akun berhasil dibuat.</p><p>Kode OTP verifikasi Anda: <strong>%s</strong></p><p>Berlaku 5 menit.</p>", otpCode),
+	); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrOTPEmailSendFailed, err)
+	}
 
 	response := toUserResponse(user)
 	return &response, nil
@@ -120,37 +131,26 @@ func (s *UserService) SendOTP(ctx context.Context, req models.OTPSendRequest) er
 		return err
 	}
 
-	phone := strings.TrimSpace(user.NoHP)
-	if phone == "" {
-		return ErrPhoneNumberRequired
-	}
-
-	generatedCode, err := s.otpAgent.SendOTP(ctx, phone)
+	generatedCode, err := generateNumericOTP(6)
 	if err != nil {
 		return err
 	}
 
-	if generatedCode != "" {
-		user.OTPCode = generatedCode
-		if err := s.repo.Update(ctx, user); err != nil {
-			return err
-		}
+	user.OTPCode = generatedCode
+	user.OTPExpiry = time.Now().Add(5 * time.Minute)
+	if err := s.repo.Update(ctx, user); err != nil {
+		return err
 	}
 
-	txtMessage := "Kode OTP sudah dikirim ke nomor handphone terdaftar."
-	htmlMessage := "<p>Kode OTP sudah dikirim ke nomor handphone terdaftar.</p>"
-	if generatedCode != "" {
-		txtMessage = fmt.Sprintf("Kode OTP Anda: %s", generatedCode)
-		htmlMessage = fmt.Sprintf("<p>Kode OTP Anda: <strong>%s</strong></p>", generatedCode)
-	}
-
-	_ = s.emailer.Send(
+	if err := s.emailer.Send(
 		ctx,
 		user.Email,
 		"Kode OTP SewaSini",
-		txtMessage,
-		htmlMessage,
-	)
+		fmt.Sprintf("Kode OTP Anda: %s. Berlaku 5 menit.", generatedCode),
+		fmt.Sprintf("<p>Kode OTP Anda: <strong>%s</strong></p><p>Berlaku 5 menit.</p>", generatedCode),
+	); err != nil {
+		return fmt.Errorf("%w: %v", ErrOTPEmailSendFailed, err)
+	}
 
 	return nil
 }
@@ -162,24 +162,21 @@ func (s *UserService) VerifyOTP(ctx context.Context, req models.OTPVerifyRequest
 		return nil, err
 	}
 
-	phone := strings.TrimSpace(user.NoHP)
-	if phone == "" {
-		return nil, ErrPhoneNumberRequired
+	if strings.TrimSpace(user.OTPCode) == "" || user.OTPExpiry.IsZero() {
+		return nil, ErrOTPExpiredOrNotFound
 	}
 
-	ok, err := s.otpAgent.VerifyOTP(ctx, phone, strings.TrimSpace(req.OTPCode))
-	if err != nil {
-		if errors.Is(err, ErrOTPNotFound) {
-			return nil, ErrOTPExpiredOrNotFound
-		}
-		return nil, err
+	if time.Now().After(user.OTPExpiry) {
+		return nil, ErrOTPExpiredOrNotFound
 	}
-	if !ok {
+
+	if strings.TrimSpace(req.OTPCode) != user.OTPCode {
 		return nil, ErrInvalidOTP
 	}
 
 	user.IsVerified = true
 	user.OTPCode = ""
+	user.OTPExpiry = time.Time{}
 	if err := s.repo.Update(ctx, user); err != nil {
 		return nil, err
 	}

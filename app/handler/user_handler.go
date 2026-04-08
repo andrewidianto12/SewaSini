@@ -145,6 +145,8 @@ func (h *UserHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	case errors.Is(err, serviceuser.ErrPhoneNumberRequired):
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceuser.ErrOTPEmailSendFailed):
+		return c.JSON(http.StatusBadGateway, map[string]string{"message": err.Error()})
 	default:
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})
 	}
