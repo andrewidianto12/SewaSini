@@ -474,6 +474,10 @@ func loadEmailNotifierFromEnv() EmailNotifier {
 	return &NoopEmailNotifier{}
 }
 
+func LoadEmailNotifierFromEnv() EmailNotifier {
+	return loadEmailNotifierFromEnv()
+}
+
 func loadOTPProviderFromEnv() OTPProvider {
 	provider := strings.ToLower(strings.TrimSpace(os.Getenv("OTP_PROVIDER")))
 	switch provider {
