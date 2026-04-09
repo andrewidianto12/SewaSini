@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ func NewRepository(db *sql.DB) *SQLRepository {
 	return &SQLRepository{db: db}
 }
 
-func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) ([]models.RuanganResponse, error) {
+func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (*models.RuanganListResponse, error) {
 	baseQuery := `
 		SELECT
 			r.id::text,
@@ -51,6 +52,11 @@ func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (
 	if filter.KategoriID != "" {
 		conditions = append(conditions, fmt.Sprintf("r.kategori_id = $%d", argPos))
 		args = append(args, filter.KategoriID)
+		argPos++
+	}
+	if filter.Search != "" {
+		conditions = append(conditions, fmt.Sprintf("(LOWER(r.nama_ruangan) LIKE LOWER($%d) OR LOWER(r.kota) LIKE LOWER($%d) OR LOWER(r.alamat) LIKE LOWER($%d))", argPos, argPos, argPos))
+		args = append(args, "%"+strings.TrimSpace(filter.Search)+"%")
 		argPos++
 	}
 	if filter.Kategori != "" {
@@ -107,8 +113,18 @@ func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (
 		argPos += 2
 	}
 
-	query := baseQuery + " WHERE " + strings.Join(conditions, " AND ") + " ORDER BY r.created_at DESC"
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	whereClause := " WHERE " + strings.Join(conditions, " AND ")
+
+	var totalItems int
+	countQuery := "SELECT COUNT(*) FROM ruangan r JOIN kategori k ON k.id = r.kategori_id" + whereClause
+	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalItems); err != nil {
+		return nil, err
+	}
+
+	offset := (filter.Page - 1) * filter.Limit
+	paginatedArgs := append(append([]any{}, args...), filter.Limit, offset)
+	query := baseQuery + whereClause + fmt.Sprintf(" ORDER BY r.created_at DESC LIMIT $%d OFFSET $%d", argPos, argPos+1)
+	rows, err := r.db.QueryContext(ctx, query, paginatedArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +143,20 @@ func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (
 		return nil, err
 	}
 
-	return rooms, nil
+	totalPages := 0
+	if totalItems > 0 {
+		totalPages = int(math.Ceil(float64(totalItems) / float64(filter.Limit)))
+	}
+
+	return &models.RuanganListResponse{
+		Data: rooms,
+		Pagination: models.PaginationResponse{
+			Page:       filter.Page,
+			Limit:      filter.Limit,
+			TotalItems: totalItems,
+			TotalPages: totalPages,
+		},
+	}, nil
 }
 
 func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.RuanganResponse, error) {

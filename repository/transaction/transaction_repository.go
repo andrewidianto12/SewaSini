@@ -51,6 +51,56 @@ func (r *SQLRepository) Create(ctx context.Context, tx *models.Transaction) erro
 	).Scan(&tx.ID, &tx.CreatedAt)
 }
 
+func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.Transaction, error) {
+	const query = `
+		SELECT
+			id::text,
+			booking_id::text,
+			user_id::text,
+			amount,
+			payment_method,
+			transaction_date,
+			status,
+			external_id,
+			COALESCE(xendit_id, ''),
+			COALESCE(last_webhook_id, ''),
+			COALESCE(payment_url, ''),
+			email_sent_at,
+			created_at
+		FROM transactions
+		WHERE id::text = $1
+	`
+
+	tx := &models.Transaction{}
+	var emailSentAt sql.NullTime
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&tx.ID,
+		&tx.BookingID,
+		&tx.UserID,
+		&tx.Amount,
+		&tx.PaymentMethod,
+		&tx.TransactionDate,
+		&tx.Status,
+		&tx.ExternalID,
+		&tx.XenditID,
+		&tx.LastWebhookID,
+		&tx.PaymentURL,
+		&emailSentAt,
+		&tx.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrTransactionNotFound
+		}
+		return nil, err
+	}
+	if emailSentAt.Valid {
+		tx.EmailSentAt = emailSentAt.Time
+	}
+
+	return tx, nil
+}
+
 func (r *SQLRepository) GetByExternalID(ctx context.Context, externalID string) (*models.Transaction, error) {
 	const query = `
 		SELECT

@@ -137,6 +137,8 @@ func registerRoutes(
 		roomsGroup := api.Group("/ruangan")
 		{
 			roomsGroup.GET("", roomHandler.ListRooms)
+			roomsGroup.GET("/search", roomHandler.ListRooms)
+			roomsGroup.GET("/filter", roomHandler.ListRooms)
 			roomsGroup.GET("/:id", roomHandler.GetRoomByID)
 		}
 
@@ -155,6 +157,11 @@ func registerRoutes(
 			}
 		}
 
+		kategoriGroup := api.Group("/kategori")
+		{
+			kategoriGroup.GET("", categoryHandler.ListCategories)
+		}
+
 		reviewsGroup := api.Group("/reviews")
 		reviewsGroup.Use(authmiddleware.BearerAuth())
 		{
@@ -170,6 +177,11 @@ func registerRoutes(
 		bookingsGroup.Use(authmiddleware.BearerAuth())
 		{
 			bookingsGroup.POST("", bookingHandler.CreateBooking)
+			bookingsGroup.GET("", bookingHandler.ListBookings)
+			bookingsGroup.GET("/:id/status", bookingHandler.GetBookingStatus)
+			bookingsGroup.GET("/:id", bookingHandler.GetBookingByID)
+			bookingsGroup.PUT("/:id", bookingHandler.UpdateBooking)
+			bookingsGroup.DELETE("/:id", bookingHandler.CancelBooking)
 		}
 
 		paymentsGroup := api.Group("/payments")
@@ -177,6 +189,8 @@ func registerRoutes(
 			protectedPaymentsGroup := paymentsGroup.Group("")
 			protectedPaymentsGroup.Use(authmiddleware.BearerAuth())
 			protectedPaymentsGroup.POST("", paymentHandler.CreatePayment)
+			protectedPaymentsGroup.GET("/invoice/:id", paymentHandler.GetInvoice)
+			protectedPaymentsGroup.GET("/:id", paymentHandler.GetPayment)
 
 			paymentsGroup.POST("/callback", paymentHandler.PaymentCallback)
 		}

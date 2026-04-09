@@ -42,6 +42,26 @@ func (h *PaymentHandler) CreatePayment(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
+func (h *PaymentHandler) GetPayment(c echo.Context) error {
+	userID, _ := c.Get(authmiddleware.ContextUserIDKey).(string)
+	resp, err := h.service.GetPayment(c.Request().Context(), userID, c.Param("id"))
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *PaymentHandler) GetInvoice(c echo.Context) error {
+	userID, _ := c.Get(authmiddleware.ContextUserIDKey).(string)
+	resp, err := h.service.GetInvoice(c.Request().Context(), userID, c.Param("id"))
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
+
 func (h *PaymentHandler) PaymentCallback(c echo.Context) error {
 	expectedToken := strings.TrimSpace(os.Getenv("XENDIT_CALLBACK_TOKEN"))
 	if expectedToken != "" && c.Request().Header.Get("x-callback-token") != expectedToken {
@@ -71,6 +91,8 @@ func (h *PaymentHandler) handleError(c echo.Context, err error) error {
 		errors.Is(err, servicetransaction.ErrPaymentMethodRequired):
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	case errors.Is(err, servicetransaction.ErrBookingOwnership):
+		return c.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
+	case errors.Is(err, servicetransaction.ErrPaymentOwnership):
 		return c.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
 	case errors.Is(err, servicetransaction.ErrBookingAlreadyPaid),
 		errors.Is(err, servicetransaction.ErrBookingNotPayable):

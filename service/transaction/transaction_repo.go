@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, tx *models.Transaction) error
+	GetByID(ctx context.Context, id string) (*models.Transaction, error)
 	GetByExternalID(ctx context.Context, externalID string) (*models.Transaction, error)
 	UpdateStatusByExternalID(ctx context.Context, externalID string, status models.TransactionStatus, xenditID, webhookID string) error
 	MarkSuccessAndConfirmBooking(ctx context.Context, externalID, xenditID, webhookID string) error

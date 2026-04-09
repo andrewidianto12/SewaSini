@@ -197,8 +197,26 @@ func TestHandleCallbackDuplicateWebhookIsIgnored(t *testing.T) {
 	}
 }
 
+func TestGetPaymentRejectsWrongUser(t *testing.T) {
+	service := NewServiceWithDeps(
+		&stubTransactionRepo{
+			byID: &models.Transaction{ID: "tx-1", UserID: "user-2"},
+		},
+		&stubBookingRepo{},
+		&stubUserRepo{},
+		&stubXenditClient{},
+		&stubEmailer{},
+	)
+
+	_, err := service.GetPayment(context.Background(), "user-1", "tx-1")
+	if !errors.Is(err, ErrPaymentOwnership) {
+		t.Fatalf("expected ErrPaymentOwnership, got %v", err)
+	}
+}
+
 type stubTransactionRepo struct {
 	created       *models.Transaction
+	byID          *models.Transaction
 	byExternalID  *models.Transaction
 	updatedStatus models.TransactionStatus
 	updateXendit  string
@@ -215,6 +233,13 @@ func (s *stubTransactionRepo) Create(_ context.Context, tx *models.Transaction) 
 	tx.ID = copied.ID
 	tx.CreatedAt = copied.CreatedAt
 	return nil
+}
+
+func (s *stubTransactionRepo) GetByID(_ context.Context, id string) (*models.Transaction, error) {
+	if s.byID == nil || s.byID.ID != id {
+		return nil, ErrTransactionNotFound
+	}
+	return s.byID, nil
 }
 
 func (s *stubTransactionRepo) GetByExternalID(_ context.Context, externalID string) (*models.Transaction, error) {
