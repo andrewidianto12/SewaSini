@@ -46,6 +46,11 @@ type UpdateBookingRequest struct {
 	JumlahPeserta  int       `json:"jumlah_peserta"`
 }
 
+type AdminUpdateBookingRequest struct {
+	Status        *BookingStatus `json:"status"`
+	PaymentStatus *PaymentStatus `json:"payment_status"`
+}
+
 type BookingResponse struct {
 	ID             string        `json:"id"`
 	UserID         string        `json:"user_id"`

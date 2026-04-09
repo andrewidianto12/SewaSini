@@ -193,6 +193,69 @@ func (s *UserService) VerifyOTP(ctx context.Context, req models.OTPVerifyRequest
 	return &response, nil
 }
 
+func (s *UserService) ForgotPassword(ctx context.Context, req models.ForgotPasswordRequest) error {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return err
+	}
+
+	generatedCode, err := generateNumericOTP(6)
+	if err != nil {
+		return err
+	}
+
+	user.OTPCode = generatedCode
+	user.OTPExpiry = time.Now().Add(5 * time.Minute)
+	if err := s.repo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	if err := s.emailer.Send(
+		ctx,
+		user.Email,
+		"Reset Password SewaSini",
+		fmt.Sprintf("Kode OTP reset password Anda: %s. Berlaku 5 menit.", generatedCode),
+		fmt.Sprintf("<p>Kode OTP reset password Anda: <strong>%s</strong></p><p>Berlaku 5 menit.</p>", generatedCode),
+	); err != nil {
+		return fmt.Errorf("%w: %v", ErrOTPEmailSendFailed, err)
+	}
+
+	return nil
+}
+
+func (s *UserService) ResetPassword(ctx context.Context, req models.ResetPasswordRequest) error {
+	normalizedEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	user, err := s.repo.GetByEmail(ctx, normalizedEmail)
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(user.OTPCode) == "" || user.OTPExpiry.IsZero() {
+		return ErrOTPExpiredOrNotFound
+	}
+	if time.Now().After(user.OTPExpiry) {
+		return ErrOTPExpiredOrNotFound
+	}
+	if strings.TrimSpace(req.OTPCode) != user.OTPCode {
+		return ErrInvalidOTP
+	}
+
+	hashedPassword, err := hashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
+	user.OTPCode = ""
+	user.OTPExpiry = time.Time{}
+	if err := s.repo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*models.UserResponse, error) {
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {

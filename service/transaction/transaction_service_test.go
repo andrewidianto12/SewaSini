@@ -269,6 +269,25 @@ func (s *stubTransactionRepo) MarkEmailSent(_ context.Context, externalID string
 	return nil
 }
 
+func (s *stubTransactionRepo) ListAll(_ context.Context) ([]models.Transaction, error) {
+	if s.byID != nil {
+		return []models.Transaction{*s.byID}, nil
+	}
+	return []models.Transaction{}, nil
+}
+
+func (s *stubTransactionRepo) GetRevenueAnalytics(_ context.Context) (*models.RevenueAnalyticsResponse, error) {
+	return &models.RevenueAnalyticsResponse{}, nil
+}
+
+func (s *stubTransactionRepo) GetReports(_ context.Context) (*models.ReportResponse, error) {
+	return &models.ReportResponse{}, nil
+}
+
+func (s *stubTransactionRepo) GetDashboard(_ context.Context) (*models.DashboardResponse, error) {
+	return &models.DashboardResponse{}, nil
+}
+
 type stubBookingRepo struct {
 	booking             *models.Booking
 	markedPaidBookingID string

@@ -64,6 +64,16 @@ type OTPSendRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" validate:"required,email"`
+	OTPCode     string `json:"otp_code" validate:"required,len=6"`
+	NewPassword string `json:"new_password" validate:"required,min=6"`
+}
+
 type UserResponse struct {
 	ID          string    `json:"id"`
 	Email       string    `json:"email"`

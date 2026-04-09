@@ -140,6 +140,31 @@ func (s *BookingPaymentService) GetInvoice(ctx context.Context, userID, paymentI
 	return toTransactionResponse(tx), nil
 }
 
+func (s *BookingPaymentService) AdminListTransactions(ctx context.Context) ([]models.TransactionResponse, error) {
+	txs, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]models.TransactionResponse, 0, len(txs))
+	for i := range txs {
+		resp = append(resp, *toTransactionResponse(&txs[i]))
+	}
+	return resp, nil
+}
+
+func (s *BookingPaymentService) AdminReports(ctx context.Context) (*models.ReportResponse, error) {
+	return s.repo.GetReports(ctx)
+}
+
+func (s *BookingPaymentService) AdminRevenues(ctx context.Context) (*models.RevenueAnalyticsResponse, error) {
+	return s.repo.GetRevenueAnalytics(ctx)
+}
+
+func (s *BookingPaymentService) AdminDashboard(ctx context.Context) (*models.DashboardResponse, error) {
+	return s.repo.GetDashboard(ctx)
+}
+
 func (s *BookingPaymentService) HandleCallback(ctx context.Context, req models.XenditCallbackRequest) error {
 	if strings.TrimSpace(req.ExternalID) == "" {
 		return ErrTransactionNotFound

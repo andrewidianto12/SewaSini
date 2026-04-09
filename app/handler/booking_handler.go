@@ -97,6 +97,35 @@ func (h *BookingHandler) GetBookingStatus(c echo.Context) error {
 	})
 }
 
+func (h *BookingHandler) AdminListBookings(c echo.Context) error {
+	bookings, err := h.service.AdminListBookings(c.Request().Context())
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, bookings)
+}
+
+func (h *BookingHandler) AdminGetBookingByID(c echo.Context) error {
+	booking, err := h.service.AdminGetBookingByID(c.Request().Context(), c.Param("id"))
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, booking)
+}
+
+func (h *BookingHandler) AdminUpdateBooking(c echo.Context) error {
+	var req models.AdminUpdateBookingRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+
+	booking, err := h.service.AdminUpdateBooking(c.Request().Context(), c.Param("id"), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, booking)
+}
+
 func (h *BookingHandler) handleError(c echo.Context, err error) error {
 	switch {
 	case errors.Is(err, servicebooking.ErrUserIDRequired),
@@ -109,6 +138,8 @@ func (h *BookingHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
 	case errors.Is(err, servicebooking.ErrBookingNotEditable):
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
+	case errors.Is(err, servicebooking.ErrBookingStatusUpdateEmpty):
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	case errors.Is(err, repositorybooking.ErrBookingNotFound):
 		return c.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 	case errors.Is(err, repositoryroom.ErrRoomNotFound):
