@@ -169,6 +169,32 @@ func TestHandleCallbackMapsExpiredStatus(t *testing.T) {
 	}
 }
 
+func TestHandleCallbackAcceptsCamelCaseExternalID(t *testing.T) {
+	txRepo := &stubTransactionRepo{
+		byExternalID: &models.Transaction{
+			ID:         "tx-1",
+			BookingID:  "booking-1",
+			UserID:     "user-1",
+			ExternalID: "external-1",
+			Status:     models.TransactionPending,
+		},
+	}
+	userRepo := &stubUserRepo{user: &models.User{ID: "user-1", Email: "user@example.com"}}
+	service := NewServiceWithDeps(txRepo, &stubBookingRepo{}, userRepo, &stubXenditClient{}, &stubEmailer{})
+
+	err := service.HandleCallback(context.Background(), models.XenditCallbackRequest{
+		ID:            "xnd-1",
+		ExternalIDAlt: "external-1",
+		Status:        "PAID",
+	})
+	if err != nil {
+		t.Fatalf("HandleCallback returned error: %v", err)
+	}
+	if !txRepo.successMarked {
+		t.Fatal("expected success update to run for camelCase externalId")
+	}
+}
+
 func TestHandleCallbackDuplicateWebhookIsIgnored(t *testing.T) {
 	txRepo := &stubTransactionRepo{
 		byExternalID: &models.Transaction{

@@ -66,7 +66,7 @@ func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.User, e
 			created_at,
 			updated_at
 		FROM users
-		WHERE id = $1
+		WHERE id::text = $1
 	`
 
 	user := &models.User{}
@@ -229,7 +229,7 @@ func (r *SQLRepository) Update(ctx context.Context, user *models.User) error {
 			otp_expiry = $9,
 			is_verified = $10,
 			updated_at = NOW()
-		WHERE id = $1
+		WHERE id::text = $1
 		RETURNING updated_at
 	`
 
@@ -258,7 +258,7 @@ func (r *SQLRepository) Update(ctx context.Context, user *models.User) error {
 }
 
 func (r *SQLRepository) Delete(ctx context.Context, id string) error {
-	const query = `DELETE FROM users WHERE id = $1`
+	const query = `DELETE FROM users WHERE id::text = $1`
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {

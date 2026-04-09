@@ -110,11 +110,20 @@ func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 	if filter.Search == "" {
 		filter.Search = strings.TrimSpace(c.QueryParam("nama"))
 	}
+	if filter.Search == "" {
+		filter.Search = strings.TrimSpace(c.QueryParam("keyword"))
+	}
 	if filter.Kota == "" {
 		filter.Kota = strings.TrimSpace(c.QueryParam("location"))
 	}
 	if filter.Kota == "" {
 		filter.Kota = strings.TrimSpace(c.QueryParam("lokasi"))
+	}
+	if filter.Kota == "" {
+		filter.Kota = strings.TrimSpace(c.QueryParam("city"))
+	}
+	if filter.Kategori == "" {
+		filter.Kategori = strings.TrimSpace(c.QueryParam("category"))
 	}
 
 	if minHarga := strings.TrimSpace(c.QueryParam("min_harga")); minHarga != "" {
@@ -124,6 +133,15 @@ func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 		}
 		filter.MinHarga = value
 	}
+	if filter.MinHarga == 0 {
+		if minHarga := strings.TrimSpace(c.QueryParam("min_price")); minHarga != "" {
+			value, err := strconv.ParseInt(minHarga, 10, 64)
+			if err != nil {
+				return filter, errors.New("min_price must be a valid integer")
+			}
+			filter.MinHarga = value
+		}
+	}
 
 	if maxHarga := strings.TrimSpace(c.QueryParam("max_harga")); maxHarga != "" {
 		value, err := strconv.ParseInt(maxHarga, 10, 64)
@@ -131,6 +149,15 @@ func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 			return filter, errors.New("max_harga must be a valid integer")
 		}
 		filter.MaxHarga = value
+	}
+	if filter.MaxHarga == 0 {
+		if maxHarga := strings.TrimSpace(c.QueryParam("max_price")); maxHarga != "" {
+			value, err := strconv.ParseInt(maxHarga, 10, 64)
+			if err != nil {
+				return filter, errors.New("max_price must be a valid integer")
+			}
+			filter.MaxHarga = value
+		}
 	}
 
 	if kapasitas := strings.TrimSpace(c.QueryParam("kapasitas")); kapasitas != "" {

@@ -51,13 +51,21 @@ func (r *SQLRepository) Create(ctx context.Context, booking *models.Booking) err
 
 func (r *SQLRepository) HasActiveOverlap(ctx context.Context, ruanganID string, startDate, endDate string) (bool, error) {
 	const query = `
-		SELECT EXISTS (
-			SELECT 1
-			FROM bookings
-			WHERE ruangan_id::text = $1
-				AND status IN ('pending', 'confirmed')
-				AND tanggal_mulai < $3::timestamp
-				AND tanggal_selesai > $2::timestamp
+		SELECT (
+			COALESCE((
+				SELECT COUNT(1)
+				FROM bookings b
+				WHERE b.ruangan_id::text = $1
+					AND b.status IN ('pending', 'confirmed')
+					AND b.tanggal_mulai < $3::timestamptz
+					AND b.tanggal_selesai > $2::timestamptz
+			), 0)
+			>=
+			COALESCE((
+				SELECT r.stock_availability
+				FROM ruangan r
+				WHERE r.id::text = $1
+			), 1)
 		)
 	`
 
@@ -71,14 +79,22 @@ func (r *SQLRepository) HasActiveOverlap(ctx context.Context, ruanganID string, 
 
 func (r *SQLRepository) HasActiveOverlapExcluding(ctx context.Context, bookingID, ruanganID, startDate, endDate string) (bool, error) {
 	const query = `
-		SELECT EXISTS (
-			SELECT 1
-			FROM bookings
-			WHERE ruangan_id::text = $1
-				AND id::text <> $2
-				AND status IN ('pending', 'confirmed')
-				AND tanggal_mulai < $4::timestamp
-				AND tanggal_selesai > $3::timestamp
+		SELECT (
+			COALESCE((
+				SELECT COUNT(1)
+				FROM bookings b
+				WHERE b.ruangan_id::text = $1
+					AND b.id::text <> $2
+					AND b.status IN ('pending', 'confirmed')
+					AND b.tanggal_mulai < $4::timestamptz
+					AND b.tanggal_selesai > $3::timestamptz
+			), 0)
+			>=
+			COALESCE((
+				SELECT r.stock_availability
+				FROM ruangan r
+				WHERE r.id::text = $1
+			), 1)
 		)
 	`
 

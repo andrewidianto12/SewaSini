@@ -50,23 +50,23 @@ func (r *SQLRepository) List(ctx context.Context, filter models.RuanganFilter) (
 	argPos := 1
 
 	if filter.KategoriID != "" {
-		conditions = append(conditions, fmt.Sprintf("r.kategori_id = $%d", argPos))
+		conditions = append(conditions, fmt.Sprintf("r.kategori_id::text = $%d", argPos))
 		args = append(args, filter.KategoriID)
 		argPos++
 	}
 	if filter.Search != "" {
-		conditions = append(conditions, fmt.Sprintf("(LOWER(r.nama_ruangan) LIKE LOWER($%d) OR LOWER(r.kota) LIKE LOWER($%d) OR LOWER(r.alamat) LIKE LOWER($%d))", argPos, argPos, argPos))
+		conditions = append(conditions, fmt.Sprintf("(LOWER(r.nama_ruangan) LIKE LOWER($%d) OR LOWER(r.kota) LIKE LOWER($%d) OR LOWER(r.alamat) LIKE LOWER($%d) OR LOWER(k.nama_kategori) LIKE LOWER($%d))", argPos, argPos, argPos, argPos))
 		args = append(args, "%"+strings.TrimSpace(filter.Search)+"%")
 		argPos++
 	}
 	if filter.Kategori != "" {
-		conditions = append(conditions, fmt.Sprintf("LOWER(k.nama_kategori) = LOWER($%d)", argPos))
-		args = append(args, strings.TrimSpace(filter.Kategori))
+		conditions = append(conditions, fmt.Sprintf("LOWER(k.nama_kategori) LIKE LOWER($%d)", argPos))
+		args = append(args, "%"+strings.TrimSpace(filter.Kategori)+"%")
 		argPos++
 	}
 	if filter.Kota != "" {
-		conditions = append(conditions, fmt.Sprintf("LOWER(r.kota) = LOWER($%d)", argPos))
-		args = append(args, strings.TrimSpace(filter.Kota))
+		conditions = append(conditions, fmt.Sprintf("LOWER(r.kota) LIKE LOWER($%d)", argPos))
+		args = append(args, "%"+strings.TrimSpace(filter.Kota)+"%")
 		argPos++
 	}
 	if filter.MinHarga > 0 {
@@ -179,7 +179,7 @@ func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.Ruangan
 			r.created_at
 		FROM ruangan r
 		JOIN kategori k ON k.id = r.kategori_id
-		WHERE r.id = $1 AND r.is_active = TRUE
+		WHERE r.id::text = $1 AND r.is_active = TRUE
 	`
 
 	row := r.db.QueryRowContext(ctx, query, id)

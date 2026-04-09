@@ -47,10 +47,12 @@ type TransactionResponse struct {
 }
 
 type XenditCallbackRequest struct {
-	ID         string `json:"id"`
-	ExternalID string `json:"external_id"`
-	Status     string `json:"status"`
-	WebhookID  string `json:"-"`
+	ID            string `json:"id"`
+	ExternalID    string `json:"external_id"`
+	ExternalIDAlt string `json:"externalId"`
+	InvoiceID     string `json:"invoice_id"`
+	Status        string `json:"status"`
+	WebhookID     string `json:"-"`
 }
 
 type RevenueAnalyticsResponse struct {
@@ -70,17 +72,17 @@ type ReportResponse struct {
 }
 
 type DashboardResponse struct {
-	TotalUsers          int   `json:"total_users"`
-	TotalRooms          int   `json:"total_rooms"`
-	ActiveRooms         int   `json:"active_rooms"`
-	TotalBookings       int   `json:"total_bookings"`
-	PendingBookings     int   `json:"pending_bookings"`
-	ConfirmedBookings   int   `json:"confirmed_bookings"`
-	CancelledBookings   int   `json:"cancelled_bookings"`
-	TotalTransactions   int   `json:"total_transactions"`
-	SuccessfulPayments  int   `json:"successful_payments"`
-	PendingPayments     int   `json:"pending_payments"`
-	FailedPayments      int   `json:"failed_payments"`
-	ExpiredPayments     int   `json:"expired_payments"`
-	TotalRevenue        int64 `json:"total_revenue"`
+	TotalUsers         int   `json:"total_users"`
+	TotalRooms         int   `json:"total_rooms"`
+	ActiveRooms        int   `json:"active_rooms"`
+	TotalBookings      int   `json:"total_bookings"`
+	PendingBookings    int   `json:"pending_bookings"`
+	ConfirmedBookings  int   `json:"confirmed_bookings"`
+	CancelledBookings  int   `json:"cancelled_bookings"`
+	TotalTransactions  int   `json:"total_transactions"`
+	SuccessfulPayments int   `json:"successful_payments"`
+	PendingPayments    int   `json:"pending_payments"`
+	FailedPayments     int   `json:"failed_payments"`
+	ExpiredPayments    int   `json:"expired_payments"`
+	TotalRevenue       int64 `json:"total_revenue"`
 }

@@ -166,11 +166,12 @@ func (s *BookingPaymentService) AdminDashboard(ctx context.Context) (*models.Das
 }
 
 func (s *BookingPaymentService) HandleCallback(ctx context.Context, req models.XenditCallbackRequest) error {
-	if strings.TrimSpace(req.ExternalID) == "" {
+	externalID := resolveCallbackExternalID(req)
+	if externalID == "" {
 		return ErrTransactionNotFound
 	}
 
-	tx, err := s.repo.GetByExternalID(ctx, req.ExternalID)
+	tx, err := s.repo.GetByExternalID(ctx, externalID)
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func (s *BookingPaymentService) HandleCallback(ctx context.Context, req models.X
 	switch status {
 	case models.TransactionSuccess:
 		if tx.Status != models.TransactionSuccess {
-			if err := s.repo.MarkSuccessAndConfirmBooking(ctx, req.ExternalID, req.ID, req.WebhookID); err != nil {
+			if err := s.repo.MarkSuccessAndConfirmBooking(ctx, externalID, req.ID, req.WebhookID); err != nil {
 				return err
 			}
 			tx.Status = models.TransactionSuccess
@@ -199,15 +200,28 @@ func (s *BookingPaymentService) HandleCallback(ctx context.Context, req models.X
 				fmt.Sprintf("Pembayaran booking %s telah diterima. Status booking Anda sekarang confirmed.", tx.BookingID),
 				fmt.Sprintf("<p>Pembayaran booking <strong>%s</strong> telah diterima.</p><p>Status booking Anda sekarang <strong>confirmed</strong>.</p>", tx.BookingID),
 			); err == nil {
-				return s.repo.MarkEmailSent(ctx, req.ExternalID)
+				return s.repo.MarkEmailSent(ctx, externalID)
 			}
 		}
 		return nil
 	case models.TransactionFailed, models.TransactionExpired:
-		return s.repo.UpdateStatusByExternalID(ctx, req.ExternalID, status, req.ID, req.WebhookID)
+		return s.repo.UpdateStatusByExternalID(ctx, externalID, status, req.ID, req.WebhookID)
 	default:
 		return ErrCallbackIgnored
 	}
+}
+
+func resolveCallbackExternalID(req models.XenditCallbackRequest) string {
+	if v := strings.TrimSpace(req.ExternalID); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(req.ExternalIDAlt); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(req.InvoiceID); v != "" {
+		return v
+	}
+	return ""
 }
 
 func toTransactionResponse(tx *models.Transaction) *models.TransactionResponse {
