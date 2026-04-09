@@ -56,9 +56,24 @@ func (h *RoomHandler) handleError(c echo.Context, err error) error {
 
 func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 	filter := models.RuanganFilter{
+		Search:     strings.TrimSpace(c.QueryParam("search")),
 		Kategori:   strings.TrimSpace(c.QueryParam("kategori")),
 		KategoriID: strings.TrimSpace(c.QueryParam("kategori_id")),
 		Kota:       strings.TrimSpace(c.QueryParam("kota")),
+		Page:       1,
+		Limit:      10,
+	}
+	if filter.Search == "" {
+		filter.Search = strings.TrimSpace(c.QueryParam("q"))
+	}
+	if filter.Search == "" {
+		filter.Search = strings.TrimSpace(c.QueryParam("nama"))
+	}
+	if filter.Kota == "" {
+		filter.Kota = strings.TrimSpace(c.QueryParam("location"))
+	}
+	if filter.Kota == "" {
+		filter.Kota = strings.TrimSpace(c.QueryParam("lokasi"))
 	}
 
 	if minHarga := strings.TrimSpace(c.QueryParam("min_harga")); minHarga != "" {
@@ -85,6 +100,22 @@ func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 		filter.Kapasitas = value
 	}
 
+	if page := strings.TrimSpace(c.QueryParam("page")); page != "" {
+		value, err := strconv.Atoi(page)
+		if err != nil {
+			return filter, errors.New("page must be a valid integer")
+		}
+		filter.Page = value
+	}
+
+	if limit := strings.TrimSpace(c.QueryParam("limit")); limit != "" {
+		value, err := strconv.Atoi(limit)
+		if err != nil {
+			return filter, errors.New("limit must be a valid integer")
+		}
+		filter.Limit = value
+	}
+
 	if tanggal := strings.TrimSpace(c.QueryParam("tanggal_ketersediaan")); tanggal != "" {
 		value, err := time.Parse("2006-01-02", tanggal)
 		if err != nil {
@@ -98,6 +129,15 @@ func buildRoomFilter(c echo.Context) (models.RuanganFilter, error) {
 	}
 	if filter.Kapasitas < 0 {
 		return filter, errors.New("kapasitas cannot be negative")
+	}
+	if filter.Page <= 0 {
+		return filter, errors.New("page must be greater than 0")
+	}
+	if filter.Limit <= 0 {
+		return filter, errors.New("limit must be greater than 0")
+	}
+	if filter.Limit > 100 {
+		return filter, errors.New("limit cannot be greater than 100")
 	}
 	if filter.MaxHarga > 0 && filter.MinHarga > filter.MaxHarga {
 		return filter, errors.New("min_harga cannot be greater than max_harga")

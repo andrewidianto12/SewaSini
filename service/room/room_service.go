@@ -14,7 +14,7 @@ func NewService(repo Repository) *RoomService {
 	return &RoomService{repo: repo}
 }
 
-func (s *RoomService) List(ctx context.Context, filter models.RuanganFilter) ([]models.RuanganResponse, error) {
+func (s *RoomService) List(ctx context.Context, filter models.RuanganFilter) (*models.RuanganListResponse, error) {
 	return s.repo.List(ctx, filter)
 }
 

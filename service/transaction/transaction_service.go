@@ -26,6 +26,7 @@ var ErrPaymentMethodRequired = errors.New("payment method is required")
 var ErrBookingAlreadyPaid = errors.New("booking is already paid")
 var ErrBookingNotPayable = errors.New("booking is not payable")
 var ErrBookingOwnership = errors.New("booking does not belong to the authenticated user")
+var ErrPaymentOwnership = errors.New("payment does not belong to the authenticated user")
 var ErrTransactionNotFound = errors.New("transaction not found")
 var ErrCallbackIgnored = errors.New("callback status ignored")
 
@@ -121,6 +122,24 @@ func (s *BookingPaymentService) CreatePayment(ctx context.Context, userID string
 	return toTransactionResponse(tx), nil
 }
 
+func (s *BookingPaymentService) GetPayment(ctx context.Context, userID, paymentID string) (*models.TransactionResponse, error) {
+	tx, err := s.getOwnedTransaction(ctx, userID, paymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toTransactionResponse(tx), nil
+}
+
+func (s *BookingPaymentService) GetInvoice(ctx context.Context, userID, paymentID string) (*models.TransactionResponse, error) {
+	tx, err := s.getOwnedTransaction(ctx, userID, paymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toTransactionResponse(tx), nil
+}
+
 func (s *BookingPaymentService) HandleCallback(ctx context.Context, req models.XenditCallbackRequest) error {
 	if strings.TrimSpace(req.ExternalID) == "" {
 		return ErrTransactionNotFound
@@ -178,6 +197,23 @@ func toTransactionResponse(tx *models.Transaction) *models.TransactionResponse {
 		PaymentURL:      tx.PaymentURL,
 		CreatedAt:       tx.CreatedAt,
 	}
+}
+
+func (s *BookingPaymentService) getOwnedTransaction(ctx context.Context, userID, paymentID string) (*models.Transaction, error) {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return nil, ErrUserIDRequired
+	}
+
+	tx, err := s.repo.GetByID(ctx, paymentID)
+	if err != nil {
+		return nil, err
+	}
+	if tx.UserID != userID {
+		return nil, ErrPaymentOwnership
+	}
+
+	return tx, nil
 }
 
 func mapCallbackStatus(status string) models.TransactionStatus {

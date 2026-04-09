@@ -70,6 +70,7 @@ type RuanganResponse struct {
 }
 
 type RuanganFilter struct {
+	Search              string     `query:"search"`
 	Kategori            string     `query:"kategori"`
 	KategoriID          string     `query:"kategori_id"`
 	Kota                string     `query:"kota"`
@@ -77,4 +78,18 @@ type RuanganFilter struct {
 	MaxHarga            int64      `query:"max_harga"`
 	Kapasitas           int        `query:"kapasitas"`
 	TanggalKetersediaan *time.Time `query:"tanggal_ketersediaan"`
+	Page                int        `query:"page"`
+	Limit               int        `query:"limit"`
+}
+
+type PaginationResponse struct {
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	TotalItems int `json:"total_items"`
+	TotalPages int `json:"total_pages"`
+}
+
+type RuanganListResponse struct {
+	Data       []RuanganResponse   `json:"data"`
+	Pagination PaginationResponse `json:"pagination"`
 }
