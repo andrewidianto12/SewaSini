@@ -2,256 +2,629 @@
   "info": {
     "_postman_id": "7d7d0b16-5a6b-4b0b-8c3f-8a1f0d0d1a01",
     "name": "SewaSini - User API",
-    "description": "Postman collection for SewaSini user endpoints.",
+    "description": "Postman collection for SewaSini user, ruangan, booking, and payment endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Register User",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"nama_lengkap\": \"Budi Santoso\",\n  \"ttl\": \"1998-05-20\",\n  \"no_hp\": \"+6281234567890\",\n  \"password\": \"rahasia123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "register"
+              ]
+            },
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "const response = pm.response.json();",
+                    "if (response && response.id) {",
+                    "  pm.environment.set('userId', response.id);",
+                    "}",
+                    "if (response && response.email) {",
+                    "  pm.environment.set('email', response.email);",
+                    "}"
+                  ]
+                }
+              }
+            ]
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"budi@example.com\",\n  \"nama_lengkap\": \"Budi Santoso\",\n  \"ttl\": \"1998-05-20\",\n  \"no_hp\": \"+6281234567890\",\n  \"password\": \"rahasia123\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/users/register",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "register"
-          ]
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "const response = pm.response.json();",
-                "if (response && response.id) {",
-                "  pm.environment.set('userId', response.id);",
-                "}",
-                "if (response && response.email) {",
-                "  pm.environment.set('email', response.email);",
-                "}"
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/send-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "send-otp"
               ]
             }
           }
-        ]
-      }
-    },
-    {
-      "name": "Login User",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"budi@example.com\",\n  \"password\": \"rahasia123\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/users/login",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "login"
-          ]
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "const response = pm.response.json();",
-                "if (response && response.access_token) {",
-                "  pm.environment.set('accessToken', response.access_token);",
-                "}",
-                "if (response && response.token_type) {",
-                "  pm.environment.set('tokenType', response.token_type);",
-                "}",
-                "if (response && response.user && response.user.id) {",
-                "  pm.environment.set('userId', response.user.id);",
-                "}",
-                "if (response && response.user && response.user.email) {",
-                "  pm.environment.set('email', response.user.email);",
-                "}"
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp_code\": \"{{otpCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "verify-otp"
               ]
             }
           }
-        ]
-      }
-    },
-    {
-      "name": "Send OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"budi@example.com\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/users/send-otp",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "send-otp"
-          ]
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"rahasia123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "login"
+              ]
+            },
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "const response = pm.response.json();",
+                    "if (response && response.access_token) {",
+                    "  pm.environment.set('accessToken', response.access_token);",
+                    "}",
+                    "if (response && response.token_type) {",
+                    "  pm.environment.set('tokenType', response.token_type);",
+                    "}",
+                    "if (response && response.user && response.user.id) {",
+                    "  pm.environment.set('userId', response.user.id);",
+                    "}",
+                    "if (response && response.user && response.user.email) {",
+                    "  pm.environment.set('email', response.user.email);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Verify OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+      "name": "Ruangan",
+      "item": [
+        {
+          "name": "List Ruangan",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ruangan?page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ruangan"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            }
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"budi@example.com\",\n  \"otp_code\": \"123456\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/users/verify-otp",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "verify-otp"
-          ]
-        }
-      }
-    },
-    {
-      "name": "List Users",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
+        {
+          "name": "Get Ruangan Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ruangan/{{ruanganId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ruangan",
+                "{{ruanganId}}"
+              ]
+            }
           }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/users",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Get User By ID",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/users/{{userId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "{{userId}}"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Update User",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"budi.baru@example.com\",\n  \"nama_lengkap\": \"Budi Santoso Baru\",\n  \"ttl\": \"1998-05-20\",\n  \"no_hp\": \"+6281234567000\",\n  \"password\": \"passwordbaru\",\n  \"role\": \"user\",\n  \"is_verified\": true\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/api/users/{{userId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "{{userId}}"
-          ]
+        {
+          "name": "Search Ruangan",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ruangan/search?q={{searchQuery}}&location={{location}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ruangan",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{searchQuery}}"
+                },
+                {
+                  "key": "location",
+                  "value": "{{location}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Ruangan",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ruangan/filter?kategori={{kategori}}&min_harga={{minHarga}}&max_harga={{maxHarga}}&kapasitas={{kapasitas}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ruangan",
+                "filter"
+              ],
+              "query": [
+                {
+                  "key": "kategori",
+                  "value": "{{kategori}}"
+                },
+                {
+                  "key": "min_harga",
+                  "value": "{{minHarga}}"
+                },
+                {
+                  "key": "max_harga",
+                  "value": "{{maxHarga}}"
+                },
+                {
+                  "key": "kapasitas",
+                  "value": "{{kapasitas}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Kategori",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/kategori",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "kategori"
+              ]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Delete User",
-      "request": {
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruangan_id\": \"{{ruanganId}}\",\n  \"tanggal_mulai\": \"2026-04-10T09:00:00Z\",\n  \"tanggal_selesai\": \"2026-04-10T12:00:00Z\",\n  \"jumlah_peserta\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            },
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "const response = pm.response.json();",
+                    "if (response && response.id) {",
+                    "  pm.environment.set('bookingId', response.id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
           }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/users/{{userId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "{{userId}}"
-          ]
+        },
+        {
+          "name": "Get User Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tanggal_mulai\": \"2026-04-10T10:00:00Z\",\n  \"tanggal_selesai\": \"2026-04-10T13:00:00Z\",\n  \"jumlah_peserta\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{bookingId}}",
+                "status"
+              ]
+            }
+          }
         }
-      }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_id\": \"{{bookingId}}\",\n  \"payment_method\": \"BCA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments"
+              ]
+            },
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "const response = pm.response.json();",
+                    "if (response && response.id) {",
+                    "  pm.environment.set('paymentId', response.id);",
+                    "}",
+                    "if (response && response.external_id) {",
+                    "  pm.environment.set('externalId', response.external_id);",
+                    "}"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "{{paymentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Invoice",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/invoice/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "invoice",
+                "{{paymentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Payment Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-callback-token",
+                "value": "{{xenditCallbackToken}}"
+              },
+              {
+                "key": "webhook-id",
+                "value": "{{webhookId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"xnd-test-001\",\n  \"external_id\": \"{{externalId}}\",\n  \"status\": \"PAID\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/callback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "payments",
+                "callback"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

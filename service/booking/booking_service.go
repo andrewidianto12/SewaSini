@@ -18,6 +18,7 @@ var ErrInvalidParticipantCount = errors.New("jumlah_peserta exceeds room capacit
 var ErrRoomUnavailable = errors.New("room is not available for the selected date")
 var ErrBookingOwnership = errors.New("booking does not belong to the authenticated user")
 var ErrBookingNotEditable = errors.New("booking cannot be updated in its current status")
+var ErrBookingStatusUpdateEmpty = errors.New("at least one booking status field must be provided")
 
 type BookingService struct {
 	repo     Repository
@@ -176,6 +177,60 @@ func (s *BookingService) CancelBooking(ctx context.Context, userID, bookingID st
 	}
 
 	return s.repo.Cancel(ctx, bookingID)
+}
+
+func (s *BookingService) AdminListBookings(ctx context.Context) ([]models.BookingResponse, error) {
+	bookings, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]models.BookingResponse, 0, len(bookings))
+	for i := range bookings {
+		room, err := s.roomRepo.GetByID(ctx, bookings[i].RuanganID)
+		if err != nil {
+			return nil, err
+		}
+		responses = append(responses, *toBookingResponse(&bookings[i], room))
+	}
+
+	return responses, nil
+}
+
+func (s *BookingService) AdminGetBookingByID(ctx context.Context, bookingID string) (*models.BookingResponse, error) {
+	booking, err := s.repo.GetByID(ctx, bookingID)
+	if err != nil {
+		return nil, err
+	}
+	room, err := s.roomRepo.GetByID(ctx, booking.RuanganID)
+	if err != nil {
+		return nil, err
+	}
+	return toBookingResponse(booking, room), nil
+}
+
+func (s *BookingService) AdminUpdateBooking(ctx context.Context, bookingID string, req models.AdminUpdateBookingRequest) (*models.BookingResponse, error) {
+	booking, err := s.repo.GetByID(ctx, bookingID)
+	if err != nil {
+		return nil, err
+	}
+	if req.Status == nil && req.PaymentStatus == nil {
+		return nil, ErrBookingStatusUpdateEmpty
+	}
+	if req.Status != nil {
+		booking.Status = *req.Status
+	}
+	if req.PaymentStatus != nil {
+		booking.PaymentStatus = *req.PaymentStatus
+	}
+	if err := s.repo.UpdateStatus(ctx, booking); err != nil {
+		return nil, err
+	}
+	room, err := s.roomRepo.GetByID(ctx, booking.RuanganID)
+	if err != nil {
+		return nil, err
+	}
+	return toBookingResponse(booking, room), nil
 }
 
 func calculateTotalHarga(hargaPerJam, hargaPerHari int64, tanggalMulai, tanggalSelesai time.Time) int64 {

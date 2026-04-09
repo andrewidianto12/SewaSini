@@ -189,6 +189,60 @@ func (r *SQLRepository) ListByUser(ctx context.Context, userID string) ([]models
 	return bookings, nil
 }
 
+func (r *SQLRepository) ListAll(ctx context.Context) ([]models.Booking, error) {
+	const query = `
+		SELECT
+			id::text,
+			user_id::text,
+			ruangan_id::text,
+			tanggal_mulai,
+			tanggal_selesai,
+			jumlah_peserta,
+			total_harga,
+			status,
+			payment_status,
+			booking_code,
+			created_at,
+			updated_at
+		FROM bookings
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bookings := make([]models.Booking, 0)
+	for rows.Next() {
+		var booking models.Booking
+		if err := rows.Scan(
+			&booking.ID,
+			&booking.UserID,
+			&booking.RuanganID,
+			&booking.TanggalMulai,
+			&booking.TanggalSelesai,
+			&booking.JumlahPeserta,
+			&booking.TotalHarga,
+			&booking.Status,
+			&booking.PaymentStatus,
+			&booking.BookingCode,
+			&booking.CreatedAt,
+			&booking.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		bookings = append(bookings, booking)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return bookings, nil
+}
+
 func (r *SQLRepository) Update(ctx context.Context, booking *models.Booking) error {
 	const query = `
 		UPDATE bookings
@@ -214,6 +268,27 @@ func (r *SQLRepository) Update(ctx context.Context, booking *models.Booking) err
 		booking.Status,
 		booking.PaymentStatus,
 	).Scan(&booking.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrBookingNotFound
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (r *SQLRepository) UpdateStatus(ctx context.Context, booking *models.Booking) error {
+	const query = `
+		UPDATE bookings
+		SET status = $2,
+			payment_status = $3,
+			updated_at = NOW()
+		WHERE id::text = $1
+		RETURNING updated_at
+	`
+
+	err := r.db.QueryRowContext(ctx, query, booking.ID, booking.Status, booking.PaymentStatus).Scan(&booking.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrBookingNotFound

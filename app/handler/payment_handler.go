@@ -85,6 +85,38 @@ func (h *PaymentHandler) PaymentCallback(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "payment callback processed"})
 }
 
+func (h *PaymentHandler) AdminListTransactions(c echo.Context) error {
+	resp, err := h.service.AdminListTransactions(c.Request().Context())
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *PaymentHandler) AdminReports(c echo.Context) error {
+	resp, err := h.service.AdminReports(c.Request().Context())
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *PaymentHandler) AdminRevenues(c echo.Context) error {
+	resp, err := h.service.AdminRevenues(c.Request().Context())
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *PaymentHandler) AdminDashboard(c echo.Context) error {
+	resp, err := h.service.AdminDashboard(c.Request().Context())
+	if err != nil {
+		return h.handleError(c, err)
+	}
+	return c.JSON(http.StatusOK, resp)
+}
+
 func (h *PaymentHandler) handleError(c echo.Context, err error) error {
 	switch {
 	case errors.Is(err, servicetransaction.ErrUserIDRequired),
