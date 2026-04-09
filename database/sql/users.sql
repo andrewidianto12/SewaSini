@@ -1,6 +1,6 @@
 -- UP
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+    id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     nama_lengkap VARCHAR(255) NOT NULL,
     ttl VARCHAR(255) NOT NULL,

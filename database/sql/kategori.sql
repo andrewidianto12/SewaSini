@@ -1,6 +1,6 @@
 -- UP
 CREATE TABLE IF NOT EXISTS kategori (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+    id SERIAL PRIMARY KEY,
     nama_kategori VARCHAR(100) UNIQUE NOT NULL,
     deskripsi TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()

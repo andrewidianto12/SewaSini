@@ -1,8 +1,8 @@
 -- UP
 CREATE TABLE IF NOT EXISTS bookings (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
-    user_id VARCHAR(36) NOT NULL REFERENCES users(id),
-    ruangan_id VARCHAR(36) NOT NULL REFERENCES ruangan(id),
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id),
+    ruangan_id INT NOT NULL REFERENCES ruangan(id),
     tanggal_mulai TIMESTAMP NOT NULL,
     tanggal_selesai TIMESTAMP NOT NULL,
     jumlah_peserta INTEGER NOT NULL,

@@ -1,8 +1,8 @@
 -- UP
 CREATE TABLE IF NOT EXISTS ruangan (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+    id SERIAL PRIMARY KEY,
     nama_ruangan VARCHAR(255) NOT NULL,
-    kategori_id VARCHAR(36) NOT NULL REFERENCES kategori(id),
+    kategori_id INT NOT NULL REFERENCES kategori(id),
     deskripsi TEXT,
     alamat TEXT NOT NULL,
     kota VARCHAR(100) NOT NULL,

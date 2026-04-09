@@ -1,8 +1,8 @@
 -- UP
 CREATE TABLE IF NOT EXISTS transactions (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
-    booking_id VARCHAR(36) NOT NULL REFERENCES bookings(id),
-    user_id VARCHAR(36) NOT NULL REFERENCES users(id),
+    id SERIAL PRIMARY KEY,
+    booking_id INT NOT NULL REFERENCES bookings(id),
+    user_id INT NOT NULL REFERENCES users(id),
     amount BIGINT NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     transaction_date TIMESTAMP NOT NULL DEFAULT NOW(),
