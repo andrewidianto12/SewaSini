@@ -172,6 +172,54 @@ func (r *SQLRepository) ListByUser(ctx context.Context, userID string) ([]models
 	return reviews, nil
 }
 
+func (r *SQLRepository) ListByRoomID(ctx context.Context, roomID string) ([]models.ReviewResponse, error) {
+	const query = `
+		SELECT
+			r.id::text,
+			r.booking_id::text,
+			r.user_id::text,
+			u.nama_lengkap,
+			r.ruangan_id::text,
+			r.rating,
+			COALESCE(r.komentar, ''),
+			r.created_at
+		FROM reviews r
+		JOIN users u ON u.id::text = r.user_id::text
+		WHERE r.ruangan_id::text = $1
+		ORDER BY r.created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	reviews := make([]models.ReviewResponse, 0)
+	for rows.Next() {
+		var review models.ReviewResponse
+		if err := rows.Scan(
+			&review.ID,
+			&review.BookingID,
+			&review.UserID,
+			&review.UserName,
+			&review.RuanganID,
+			&review.Rating,
+			&review.Komentar,
+			&review.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, review)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return reviews, nil
+}
+
 func (r *SQLRepository) Update(ctx context.Context, reviewID string, rating int, komentar string) error {
 	const query = `
 		UPDATE reviews

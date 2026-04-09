@@ -160,6 +160,7 @@ func registerRoutes(
 		{
 			reviewsGroup.POST("", reviewHandler.CreateReview)
 			reviewsGroup.GET("", reviewHandler.ListReviews)
+			reviewsGroup.GET("/ruangan/:ruangan_id", reviewHandler.ListReviewsByRoomID)
 			reviewsGroup.GET("/:id", reviewHandler.GetReviewByID)
 			reviewsGroup.PUT("/:id", reviewHandler.UpdateReview)
 			reviewsGroup.DELETE("/:id", reviewHandler.DeleteReview)

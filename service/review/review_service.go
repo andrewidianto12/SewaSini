@@ -66,6 +66,15 @@ func (s *ReviewService) ListReviews(ctx context.Context, userID string) ([]model
 	return s.repo.ListByUser(ctx, userID)
 }
 
+func (s *ReviewService) ListReviewsByRoomID(ctx context.Context, roomID string) ([]models.ReviewResponse, error) {
+	roomID = normalizeText(roomID)
+	if roomID == "" {
+		return nil, ErrRoomIDRequired
+	}
+
+	return s.repo.ListByRoomID(ctx, roomID)
+}
+
 func (s *ReviewService) GetReviewByID(ctx context.Context, userID, id string) (*models.ReviewResponse, error) {
 	review, err := s.repo.GetByID(ctx, normalizeText(id))
 	if err != nil {
@@ -76,6 +85,11 @@ func (s *ReviewService) GetReviewByID(ctx context.Context, userID, id string) (*
 }
 
 func (s *ReviewService) UpdateReview(ctx context.Context, userID, id string, req models.UpdateReviewRequest) (*models.ReviewResponse, error) {
+	userID = normalizeText(userID)
+	if userID == "" {
+		return nil, ErrUserIDRequired
+	}
+
 	if req.Rating == nil && req.Komentar == nil {
 		return nil, ErrReviewUpdateEmpty
 	}
@@ -85,7 +99,7 @@ func (s *ReviewService) UpdateReview(ctx context.Context, userID, id string, req
 		return nil, err
 	}
 
-	if review.UserID != normalizeText(userID) {
+	if review.UserID != userID {
 		return nil, ErrForbiddenReviewAccess
 	}
 

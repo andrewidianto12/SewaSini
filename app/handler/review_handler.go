@@ -59,6 +59,15 @@ func (h *ReviewHandler) GetReviewByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, review)
 }
 
+func (h *ReviewHandler) ListReviewsByRoomID(c echo.Context) error {
+	reviews, err := h.service.ListReviewsByRoomID(c.Request().Context(), c.Param("ruangan_id"))
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, reviews)
+}
+
 func (h *ReviewHandler) UpdateReview(c echo.Context) error {
 	var req models.UpdateReviewRequest
 	if err := c.Bind(&req); err != nil {
@@ -92,7 +101,7 @@ func (h *ReviewHandler) handleError(c echo.Context, err error) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 	case errors.Is(err, repositoryreview.ErrReviewAlreadyExists):
 		return c.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
-	case errors.Is(err, servicereview.ErrUserIDRequired), errors.Is(err, servicereview.ErrReviewUpdateEmpty), errors.Is(err, servicereview.ErrBookingMismatch):
+	case errors.Is(err, servicereview.ErrUserIDRequired), errors.Is(err, servicereview.ErrRoomIDRequired), errors.Is(err, servicereview.ErrReviewUpdateEmpty), errors.Is(err, servicereview.ErrBookingMismatch):
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	case errors.Is(err, servicereview.ErrInsufficientRole), errors.Is(err, servicereview.ErrForbiddenReviewAccess):
 		return c.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
