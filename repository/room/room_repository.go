@@ -194,6 +194,126 @@ func (r *SQLRepository) GetByID(ctx context.Context, id string) (*models.Ruangan
 	return room, nil
 }
 
+func (r *SQLRepository) Create(ctx context.Context, room *models.Ruangan) error {
+	const query = `
+		INSERT INTO ruangan (
+			nama_ruangan,
+			kategori_id,
+			deskripsi,
+			alamat,
+			kota,
+			kapasitas,
+			harga_per_jam,
+			harga_per_hari,
+			stock_availability,
+			fasilitas,
+			gambar,
+			is_active
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		RETURNING id::text, created_at, updated_at
+	`
+
+	fasilitas, err := json.Marshal(room.Fasilitas)
+	if err != nil {
+		return err
+	}
+	gambar, err := json.Marshal(room.Gambar)
+	if err != nil {
+		return err
+	}
+
+	return r.db.QueryRowContext(
+		ctx,
+		query,
+		room.NamaRuangan,
+		room.KategoriID,
+		room.Deskripsi,
+		room.Alamat,
+		room.Kota,
+		room.Kapasitas,
+		room.HargaPerJam,
+		room.HargaPerHari,
+		room.StockAvailability,
+		fasilitas,
+		gambar,
+		room.IsActive,
+	).Scan(&room.ID, &room.CreatedAt, &room.UpdatedAt)
+}
+
+func (r *SQLRepository) Update(ctx context.Context, id string, room *models.Ruangan) error {
+	const query = `
+		UPDATE ruangan
+		SET nama_ruangan = $2,
+			kategori_id = $3,
+			deskripsi = $4,
+			alamat = $5,
+			kota = $6,
+			kapasitas = $7,
+			harga_per_jam = $8,
+			harga_per_hari = $9,
+			stock_availability = $10,
+			fasilitas = $11,
+			gambar = $12,
+			is_active = $13,
+			updated_at = NOW()
+		WHERE id::text = $1
+	`
+
+	fasilitas, err := json.Marshal(room.Fasilitas)
+	if err != nil {
+		return err
+	}
+	gambar, err := json.Marshal(room.Gambar)
+	if err != nil {
+		return err
+	}
+
+	result, err := r.db.ExecContext(
+		ctx,
+		query,
+		id,
+		room.NamaRuangan,
+		room.KategoriID,
+		room.Deskripsi,
+		room.Alamat,
+		room.Kota,
+		room.Kapasitas,
+		room.HargaPerJam,
+		room.HargaPerHari,
+		room.StockAvailability,
+		fasilitas,
+		gambar,
+		room.IsActive,
+	)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrRoomNotFound
+	}
+	return nil
+}
+
+func (r *SQLRepository) Delete(ctx context.Context, id string) error {
+	const query = `DELETE FROM ruangan WHERE id::text = $1`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrRoomNotFound
+	}
+	return nil
+}
+
 type scanner interface {
 	Scan(dest ...any) error
 }

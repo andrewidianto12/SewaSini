@@ -45,10 +45,51 @@ func (h *RoomHandler) GetRoomByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, room)
 }
 
+func (h *RoomHandler) CreateRoom(c echo.Context) error {
+	var req models.CreateRuanganRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	room, err := h.service.CreateRoom(c.Request().Context(), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusCreated, room)
+}
+
+func (h *RoomHandler) UpdateRoom(c echo.Context) error {
+	var req models.UpdateRuanganRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+
+	room, err := h.service.UpdateRoom(c.Request().Context(), c.Param("id"), req)
+	if err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, room)
+}
+
+func (h *RoomHandler) DeleteRoom(c echo.Context) error {
+	if err := h.service.DeleteRoom(c.Request().Context(), c.Param("id")); err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *RoomHandler) handleError(c echo.Context, err error) error {
 	switch {
 	case errors.Is(err, repositoryroom.ErrRoomNotFound):
 		return c.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
+	case errors.Is(err, serviceroom.ErrRoomUpdateEmpty):
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	default:
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})
 	}

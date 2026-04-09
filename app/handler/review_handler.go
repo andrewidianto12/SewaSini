@@ -60,7 +60,12 @@ func (h *ReviewHandler) GetReviewByID(c echo.Context) error {
 }
 
 func (h *ReviewHandler) ListReviewsByRoomID(c echo.Context) error {
-	reviews, err := h.service.ListReviewsByRoomID(c.Request().Context(), c.Param("ruangan_id"))
+	roomID := c.Param("ruangan_id")
+	if roomID == "" {
+		roomID = c.Param("id")
+	}
+
+	reviews, err := h.service.ListReviewsByRoomID(c.Request().Context(), roomID)
 	if err != nil {
 		return h.handleError(c, err)
 	}

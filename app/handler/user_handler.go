@@ -95,6 +95,38 @@ func (h *UserHandler) VerifyOTP(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+func (h *UserHandler) ForgotPassword(c echo.Context) error {
+	var req models.ForgotPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	if err := h.service.ForgotPassword(c.Request().Context(), req); err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "password reset otp sent"})
+}
+
+func (h *UserHandler) ResetPassword(c echo.Context) error {
+	var req models.ResetPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	if err := h.service.ResetPassword(c.Request().Context(), req); err != nil {
+		return h.handleError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "password reset successful"})
+}
+
 func (h *UserHandler) GetUserByID(c echo.Context) error {
 	user, err := h.service.GetUserByID(c.Request().Context(), c.Param("id"))
 	if err != nil {

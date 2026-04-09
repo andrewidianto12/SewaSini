@@ -52,3 +52,35 @@ type XenditCallbackRequest struct {
 	Status     string `json:"status"`
 	WebhookID  string `json:"-"`
 }
+
+type RevenueAnalyticsResponse struct {
+	TotalRevenue           int64 `json:"total_revenue"`
+	SuccessfulTransactions int   `json:"successful_transactions"`
+	PendingTransactions    int   `json:"pending_transactions"`
+	FailedTransactions     int   `json:"failed_transactions"`
+	ExpiredTransactions    int   `json:"expired_transactions"`
+}
+
+type ReportResponse struct {
+	TotalUsers        int   `json:"total_users"`
+	TotalRooms        int   `json:"total_rooms"`
+	TotalBookings     int   `json:"total_bookings"`
+	TotalTransactions int   `json:"total_transactions"`
+	TotalRevenue      int64 `json:"total_revenue"`
+}
+
+type DashboardResponse struct {
+	TotalUsers          int   `json:"total_users"`
+	TotalRooms          int   `json:"total_rooms"`
+	ActiveRooms         int   `json:"active_rooms"`
+	TotalBookings       int   `json:"total_bookings"`
+	PendingBookings     int   `json:"pending_bookings"`
+	ConfirmedBookings   int   `json:"confirmed_bookings"`
+	CancelledBookings   int   `json:"cancelled_bookings"`
+	TotalTransactions   int   `json:"total_transactions"`
+	SuccessfulPayments  int   `json:"successful_payments"`
+	PendingPayments     int   `json:"pending_payments"`
+	FailedPayments      int   `json:"failed_payments"`
+	ExpiredPayments     int   `json:"expired_payments"`
+	TotalRevenue        int64 `json:"total_revenue"`
+}
