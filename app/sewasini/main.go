@@ -42,7 +42,7 @@ func main() {
 	e.HideBanner = false
 	e.Validator = &customvalidator.CustomValidator{Validator: validator.New()}
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
+	e.Use(authmiddleware.RequestHitLogger())
 	e.Use(middleware.CORS())
 
 	e.GET("/health", func(c echo.Context) error {
